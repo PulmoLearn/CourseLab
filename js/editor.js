@@ -46,7 +46,40 @@ function renderProperties(){const box=$('#properties');box.innerHTML='';let sect
  const del=document.createElement('button');del.type='button';del.className='secondary';del.textContent='Remove card';del.onclick=()=>{block.cards.splice(i,1);persist();renderProperties()};group.append(del);box.append(group)});
  const add=document.createElement('button');add.type='button';add.className='secondary';add.textContent='+ Add card';add.onclick=()=>{block.cards=block.cards||[];block.cards.push({front:'',back:''});persist();renderProperties()};box.append(add);
  }
- if(block.type==='multiple-choice'){field('Question','question',true);area('Answer options — one per line',(block.choices||[]).join('\n'),v=>block.choices=v.split('\n').map(x=>x.trim()).filter(Boolean),4);const l=document.createElement('label');l.textContent='Correct answer';const sel=document.createElement('select');(block.choices||[]).forEach((c,i)=>{const o=document.createElement('option');o.value=i;o.textContent=(i+1)+'. '+c;sel.append(o)});sel.value=block.correct||0;sel.onchange=()=>{block.correct=Number(sel.value);persist()};l.append(sel);box.append(l)}
+ if(block.type==='multiple-choice'){
+  if(!Array.isArray(block.choices))block.choices=['Option A','Option B','Option C'];
+  while(block.choices.length<3)block.choices.push('');
+  if(!Array.isArray(block.choiceImages))block.choiceImages=[];
+  if(!Array.isArray(block.choiceImageAssetIds))block.choiceImageAssetIds=[];
+  if(!Array.isArray(block.choiceAlts))block.choiceAlts=[];
+  const imagePicker=(parent,label,getAsset,setAsset,getUrl,setUrl,getAlt,setAlt)=>{
+   const heading=document.createElement('label');heading.className='field';heading.textContent=label;
+   const urlInput=document.createElement('input');urlInput.placeholder='Optional HTTPS image URL';urlInput.value=getUrl()||'';
+   urlInput.onchange=()=>{setUrl(urlInput.value);if(urlInput.value)setAsset(null);persist();renderProperties()};
+   heading.append(urlInput);parent.append(heading);
+   const choose=document.createElement('button');choose.type='button';choose.className='secondary';choose.textContent='Choose image from library';
+   choose.onclick=async()=>{try{const asset=await CourseLabPicker.pick(await CourseLabMedia.list());if(!asset)return;setAsset(asset.id);setUrl('');persist();renderProperties()}catch(err){$('#status').textContent=err.message}};parent.append(choose);
+   const chosen=document.createElement('div');chosen.className='selected-media';const id=getAsset(),url=getUrl();
+   if(id||url){const img=document.createElement('img');img.alt='Selected image';chosen.append(img);const name=document.createElement('span');name.textContent=url||'Loading image…';chosen.append(name);
+    if(id)CourseLabMedia.list().then(assets=>{name.textContent=assets.find(a=>a.id===id)?.title||'Library image';return CourseLabMedia.signedUrl(id)}).then(src=>img.src=src).catch(()=>{name.textContent='Image unavailable'});else img.src=url;
+    const remove=document.createElement('button');remove.type='button';remove.className='secondary';remove.textContent='Remove image';remove.onclick=()=>{setAsset(null);setUrl('');persist();renderProperties()};chosen.append(remove);
+   }else chosen.textContent='No image selected';parent.append(chosen);
+   const altLabel=document.createElement('label');altLabel.className='field';altLabel.textContent='Image alternative text';const altInput=document.createElement('input');altInput.value=getAlt()||'';altInput.oninput=()=>{setAlt(altInput.value);persist()};altLabel.append(altInput);parent.append(altLabel);
+  };
+  field('Question','question',true);
+  imagePicker(box,'Question image',()=>block.questionImageAssetId,v=>block.questionImageAssetId=v,()=>block.questionImage,v=>block.questionImage=v,()=>block.questionImageAlt,v=>block.questionImageAlt=v);
+  const shuffle=document.createElement('label');const check=document.createElement('input');check.type='checkbox';check.checked=!!block.shuffleAnswers;check.onchange=()=>{block.shuffleAnswers=check.checked;persist()};shuffle.append(check,document.createTextNode(' Shuffle answer order on every attempt'));box.append(shuffle);
+  const title=document.createElement('h4');title.textContent='Answer options';box.append(title);
+  block.choices.forEach((choice,i)=>{
+   const group=document.createElement('fieldset');group.className='card-editor';const legend=document.createElement('legend');legend.textContent='Answer '+(i+1);group.append(legend);
+   const label=document.createElement('label');label.className='field';label.textContent='Answer text';const input=document.createElement('textarea');input.rows=2;input.value=choice;input.oninput=()=>{block.choices[i]=input.value;persist()};label.append(input);group.append(label);
+   const correct=document.createElement('label');const radio=document.createElement('input');radio.type='radio';radio.name='correct-answer';radio.checked=Number(block.correct||0)===i;radio.onchange=()=>{block.correct=i;persist()};correct.append(radio,document.createTextNode(' Correct answer'));group.append(correct);
+   imagePicker(group,'Answer '+(i+1)+' image',()=>block.choiceImageAssetIds[i],v=>block.choiceImageAssetIds[i]=v,()=>block.choiceImages[i],v=>block.choiceImages[i]=v,()=>block.choiceAlts[i],v=>block.choiceAlts[i]=v);
+   const minus=document.createElement('button');minus.type='button';minus.className='secondary';minus.textContent='− Remove answer';minus.disabled=block.choices.length<=2;minus.onclick=()=>{block.choices.splice(i,1);block.choiceImages.splice(i,1);block.choiceImageAssetIds.splice(i,1);block.choiceAlts.splice(i,1);if(block.correct===i)block.correct=0;else if(block.correct>i)block.correct--;persist();renderProperties()};group.append(minus);box.append(group);
+  });
+  const add=document.createElement('button');add.type='button';add.className='secondary';add.textContent='+ Add answer';add.onclick=()=>{block.choices.push('');persist();renderProperties()};box.append(add);
+ }
+
  if(block.type==='button'){field('Button text','label');const lab=document.createElement('label');lab.className='field';lab.textContent='Button action';const sel=document.createElement('select');[['reveal','Reveal following blocks'],['internal','Navigate within lesson'],['external','Open external URL']].forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;sel.append(o)});sel.value=block.buttonAction||(block.target?'external':'reveal');sel.onchange=()=>{block.buttonAction=sel.value;block.requireCompletion=sel.value==='reveal';persist();renderProperties()};lab.append(sel);box.append(lab);if(sel.value!=='reveal')field(sel.value==='internal'?'Destination (#block-id)':'External HTTPS URL','target');if(sel.value==='reveal'){block.requireCompletion=true;const help=document.createElement('p');help.className='small';help.textContent='Click to reveal following blocks. The button fills its selected column.';box.append(help)}}
  if(block.type!=='button'){
  const gate=document.createElement('label');const ck=document.createElement('input');ck.type='checkbox';ck.checked=!!block.requireCompletion;ck.onchange=()=>{block.requireCompletion=ck.checked;persist()};gate.append(ck,document.createTextNode(' Hide following blocks until completed'));box.append(gate);
