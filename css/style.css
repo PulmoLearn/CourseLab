@@ -13,3 +13,15 @@
 
 /* v0.4.5 editor question preview and contained properties */
 .mc-editor-preview{width:100%;min-width:0;overflow-wrap:anywhere;text-align:left;padding:10px}.mc-question{font-weight:700;margin-bottom:12px;white-space:pre-wrap}.mc-editor-option{display:flex;gap:10px;align-items:flex-start;padding:9px 10px;border:1px solid #cbd7df;border-radius:9px;margin:7px 0;background:#fff}.mc-editor-option>span{font-weight:700;flex:0 0 22px}.mc-editor-option>div{flex:1;min-width:0;white-space:pre-wrap}.mc-editor-preview .mc-image{max-width:100%;max-height:135px;object-fit:contain;display:block;margin:8px 0}.mc-editor-preview>button{margin-top:8px}.card-editor{max-width:100%;min-width:0}.card-editor .field,.card-editor input:not([type=radio]):not([type=checkbox]),.card-editor textarea{display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box}.card-editor .selected-media{max-width:100%;min-width:0}.card-editor .selected-media span{min-width:0;overflow-wrap:anywhere}.card-editor .selected-media img{flex-shrink:0}.card-editor button{max-width:100%;white-space:normal}#properties{min-width:0;max-width:100%;overflow-wrap:anywhere}#properties> .field input,#properties> .field textarea{max-width:100%}.flashcard-face>span:not(.flashcard-turn-icon){max-width:100%;overflow-wrap:anywhere}.flashcard-face img{flex-shrink:1;min-height:0}.content-block .flashcard-scene{width:100%}
+
+/* v0.4.6 learner preview cards and buttons */
+.activity-panel:has(.flashcard-scene){padding:12px;max-width:100%}
+.activity-panel .flashcard-scene{margin:0 auto 12px}
+.activity-panel .flashcard-face{box-sizing:border-box}
+.activity-panel .flashcard-face img{max-width:100%;max-height:155px;object-fit:contain}
+.activity-panel:has(.lesson-reveal-button){padding:0;border:0;background:transparent}
+.activity-panel .lesson-reveal-button{width:100%;display:flex;justify-content:center;min-height:48px}
+.content-block:has(.lesson-reveal-button){display:flex;align-items:center}
+.content-block>.lesson-reveal-button{width:100%;min-height:48px}
+.preview-block{width:100%}
+@media(prefers-reduced-motion:reduce){.flashcard-flipper{transition:none!important}}
