@@ -18,7 +18,7 @@
         const {data,error}=await db.auth.signUp({email,password,options:{emailRedirectTo:location.origin+'/login.html'}});
         if(error)throw error;
         if(data.session) location.replace(safeNext);
-        else setStatus('Check your email for a confirmation link, then return here to sign in.');
+        else {setStatus('Check your email to confirm your account. If you open the link on another device, return here and choose Sign in.');document.querySelector('input[name=mode][value=signin]').checked=true;}
       }else{
         const {error}=await db.auth.signInWithPassword({email,password});if(error)throw error;location.replace(safeNext);
       }
