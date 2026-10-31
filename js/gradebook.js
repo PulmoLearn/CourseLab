@@ -1,0 +1,10 @@
+(async()=>{
+ const db=CourseLabCloud.db,$=id=>document.getElementById(id),id=new URLSearchParams(location.search).get('course');let rows=[];
+ const status=m=>$('gradebook-status').textContent=m;
+ try{const user=await CourseLabCloud.requireUser();if(!id)throw Error('Choose a course from the instructor dashboard.');const {data:c,error}=await db.from('courses').select('title').eq('id',id).single();if(error)throw error;$('gradebook-course').textContent=c.title;$('test-link').href='learn.html?test=1&course='+encodeURIComponent(id);await load();
+  $('include-test').onchange=load;
+  $('reset-test').onclick=async()=>{if(!confirm('Delete ALL Test Student lesson completions for this course? Real learner records will not be changed.'))return;const {error}=await db.from('instructor_test_progress').delete().eq('course_id',id).eq('instructor_id',user.id);if(error)status(error.message);else await load()};
+  $('export-csv').onclick=()=>{const csv=[['Learner','Type','Completed lessons','Last completed'],...rows.map(r=>[r.learner_label,r.is_test?'Test':'Learner',r.completed_lessons,r.last_completed_at||''])].map(line=>line.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='courselab-gradebook.csv';a.click();URL.revokeObjectURL(url)};
+ }catch(e){status(e.message)}
+ async function load(){status('Loading…');const {data,error}=await db.rpc('courselab_course_gradebook',{p_course:id,p_include_test:$('include-test').checked});if(error){status(error.message);return}rows=data||[];const body=$('gradebook-rows');body.replaceChildren();for(const r of rows){const tr=document.createElement('tr');for(const v of [r.learner_label,r.is_test?'TEST':'Learner',r.completed_lessons,r.last_completed_at?new Date(r.last_completed_at).toLocaleString():'—']){const td=document.createElement('td');td.textContent=v;td.style.padding='12px';tr.append(td)}body.append(tr)}status(`${rows.length} record(s) displayed${$('include-test').checked?' (including test)':' (test excluded)'}.`)}
+})();

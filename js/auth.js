@@ -5,7 +5,7 @@
   const setStatus=(message,error=false)=>{status.textContent=message;status.style.color=error?'#9d2335':''};
   const params=new URLSearchParams(location.search);
   const next=params.get('next');
-  const safeNext=next && /^(dashboard|editor|preview)\.html(?:\?[^#]*)?$/.test(next)?next:'dashboard.html';
+  const safeNext=next && /^(dashboard|editor|preview|learn|gradebook)\.html(?:\?[^#]*)?$/.test(next)?next:'dashboard.html';
   const {data:{session}}=await db.auth.getSession();
   if(session){location.replace(safeNext);return}
   form.addEventListener('submit',async e=>{
