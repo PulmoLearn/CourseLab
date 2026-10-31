@@ -5,9 +5,12 @@
   const setStatus=(message,error=false)=>{status.textContent=message;status.style.color=error?'#9d2335':''};
   const params=new URLSearchParams(location.search);
   const next=params.get('next');
-  const safeNext=next && /^(dashboard|editor|preview|learn|gradebook)\.html(?:\?[^#]*)?$/.test(next)?next:'dashboard.html';
+  const allowedNext=next && /^(dashboard|editor|preview|learn|gradebook)\.html(?:\?[^#]*)?$/.test(next)?next:null;
+  const destination=document.querySelector('#login-destination');
+  destination.value=allowedNext?.startsWith('learn.html')?'learn.html':'dashboard.html';
+  const safeNext=()=>allowedNext && (allowedNext.startsWith('learn.html')=== (destination.value==='learn.html'))?allowedNext:destination.value;
   const {data:{session}}=await db.auth.getSession();
-  if(session){location.replace(safeNext);return}
+  if(session){location.replace(safeNext());return}
   form.addEventListener('submit',async e=>{
     e.preventDefault();const submit=form.querySelector('[type=submit]');submit.disabled=true;
     const email=document.querySelector('#email').value.trim(),password=document.querySelector('#password').value;
@@ -17,10 +20,10 @@
       if(mode==='signup'){
         const {data,error}=await db.auth.signUp({email,password,options:{emailRedirectTo:location.origin+'/login.html'}});
         if(error)throw error;
-        if(data.session) location.replace(safeNext);
+        if(data.session) location.replace(safeNext());
         else {setStatus('Check your email to confirm your account. If you open the link on another device, return here and choose Sign in.');document.querySelector('input[name=mode][value=signin]').checked=true;}
       }else{
-        const {error}=await db.auth.signInWithPassword({email,password});if(error)throw error;location.replace(safeNext);
+        const {error}=await db.auth.signInWithPassword({email,password});if(error)throw error;location.replace(safeNext());
       }
     }catch(err){setStatus(err.message||'Authentication failed.',true)}finally{submit.disabled=false}
   });

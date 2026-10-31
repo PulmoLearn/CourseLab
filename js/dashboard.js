@@ -5,3 +5,19 @@ async function render(){list.innerHTML='';status.textContent='Loading courses…
  el.querySelector('.duplicate').onclick=async()=>{status.textContent='Duplicating…';try{const source=await CourseLabCloud.loadCourse(course.id);const {data:copy,error}=await db.from('courses').insert({owner_id:currentUser.id,title:source.title+' (Copy)',description:source.description||'',settings:source.settings||{}}).select('id').single();if(error)throw error;for(let i=0;i<source.lessons.length;i++){const l=source.lessons[i];const sections=structuredClone(l.sections);sections.forEach(s=>{s.id=CourseLab.id();s.blocks.forEach(b=>b.id=CourseLab.id())});await CourseLabCloud.createLesson(copy.id,l.title,i,sections)}await render()}catch(e){report(e)}};
  el.querySelector('.delete').onclick=async()=>{if(!confirm(`Delete ${course.title} and all its lessons? This cannot be undone.`))return;const {error}=await db.from('courses').delete().eq('id',course.id);if(error)report(error);else await render()};list.append(el)})}
 (async()=>{try{currentUser=await CourseLabCloud.requireUser();document.querySelector('#account').textContent=currentUser.email;const {error:profileError}=await db.from('instructor_profiles').upsert({id:currentUser.id,display_name:currentUser.user_metadata?.display_name||''},{onConflict:'id',ignoreDuplicates:true});if(profileError)report(profileError);document.querySelector('#logout').onclick=async()=>{await db.auth.signOut();location.replace('login.html')};document.querySelector('#new-course').onsubmit=async e=>{e.preventDefault();const title=document.querySelector('#course-title').value.trim();if(!title)return;status.textContent='Creating course…';const {data,error}=await db.from('courses').insert({owner_id:currentUser.id,title}).select('id').single();if(error){report(error);return}try{await CourseLabCloud.createLesson(data.id)}catch(err){report(err);return}location.href=`editor.html?course=${encodeURIComponent(data.id)}`};await render()}catch(e){report(e)}})();
+
+// Instructor accounts may also enroll as learners; enrollment never grants studio access.
+async function renderInstructorEnrollments(){
+ const target=document.querySelector('#instructor-enrolled-courses'),notice=document.querySelector('#instructor-join-status');
+ const {data,error}=await db.rpc('my_enrolled_courses');
+ if(error){notice.textContent='Unable to load joined courses: '+error.message;return}
+ target.replaceChildren();
+ for(const c of data||[]){const card=document.createElement('article');card.className='card course-card';
+ const heading=document.createElement('h3');heading.textContent=c.title;const link=document.createElement('a');link.className='button secondary';link.href='learn.html?course='+encodeURIComponent(c.course_id);link.textContent='Open as learner';card.append(heading,link);target.append(card)}
+}
+document.querySelector('#instructor-join-form').addEventListener('submit',async e=>{
+ e.preventDefault();const notice=document.querySelector('#instructor-join-status');notice.textContent='Joining course…';
+ const {error}=await db.rpc('join_course',{p_code:document.querySelector('#instructor-join-code').value.trim()});
+ if(error){notice.textContent=error.message;return}notice.textContent='Enrolled! Open the course below as a learner.';document.querySelector('#instructor-join-code').value='';await renderInstructorEnrollments();
+});
+renderInstructorEnrollments();
