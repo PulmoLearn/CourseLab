@@ -43,6 +43,15 @@ const CourseLabActivities=(()=>{
  }
 
  return root}
- function renderLesson(lesson,container){done.clear();container.replaceChildren();const blocks=(lesson.sections||[]).flatMap(s=>s.blocks||[]);const nodes=[];for(const b of blocks){const holder=element('section');holder.className='preview-block';holder.id=b.id;nodes.push(holder);container.append(holder)};
+ function renderLesson(lesson,container){done.clear();container.replaceChildren();const blocks=[];const nodes=[];
+ for(const section of lesson.sections||[]){
+  const row=element('div');row.className='block-grid preview-row';row.dataset.cols=String(Math.min(3,Math.max(1,Number(section.cols)||1)));
+  for(const b of section.blocks||[]){
+   const holder=element('section');holder.className='preview-block';holder.id=b.id;
+   blocks.push(b);nodes.push(holder);row.append(holder);
+  }
+  container.append(row);
+ };
+
  update=()=>{let locked=false;blocks.forEach((b,i)=>{const holder=nodes[i];holder.hidden=locked;if(!locked&&!holder.dataset.ready){holder.dataset.ready='yes';if(['flashcards','multiple-choice','button'].includes(b.type))holder.append(mount(b));else if(b.type==='text')holder.append(element('p',b.text||''));else if(b.type==='image'){const img=document.createElement('img');img.alt=b.decorative?'':(b.alt||'');holder.append(img);if(b.assetId)CourseLabMedia.signedUrl(b.assetId).then(url=>img.src=url).catch(()=>holder.append(element('p','Image unavailable')));else if((b.url||'').startsWith('https://'))img.src=b.url}else if(b.type==='video'){const frame=document.createElement('iframe');let src='';try{const u=new URL(b.url);if(['youtube.com','www.youtube.com','m.youtube.com'].includes(u.hostname))src='https://www.youtube-nocookie.com/embed/'+u.searchParams.get('v');else if(u.hostname==='youtu.be')src='https://www.youtube-nocookie.com/embed/'+u.pathname.slice(1);else if(['vimeo.com','www.vimeo.com'].includes(u.hostname))src='https://player.vimeo.com/video/'+u.pathname.split('/').filter(Boolean)[0]}catch{}if(src){frame.src=src;frame.title='Instructional video';frame.allow='fullscreen; picture-in-picture';frame.style.cssText='width:100%;aspect-ratio:16/9;border:0';holder.append(frame)}else holder.append(element('p','Video URL unavailable'))}else holder.append(element('p','Activity not yet supported'))}if((b.requireCompletion||(b.type==='button'&&(b.buttonAction||(!b.target?'reveal':'external'))==='reveal'))&&!done.has(b.id))locked=true});};update();return {completed:done}}
  return {renderLesson};})();
