@@ -154,25 +154,17 @@ function renderProperties(){const box=$('#properties');box.innerHTML='';let sect
   const add=document.createElement('button');add.type='button';add.className='secondary';add.textContent='+ Add answer';add.onclick=()=>{block.choices.push('');persist();renderProperties()};box.append(add);
  }
 
- if(block.type==='button'){field('Button text','label');const lab=document.createElement('label');lab.className='field';lab.textContent='Button action';const sel=document.createElement('select');[['reveal','Reveal following blocks'],['internal','Navigate within lesson'],['external','Open external URL']].forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;sel.append(o)});sel.value=block.buttonAction||(block.target?'external':'reveal');sel.onchange=()=>{block.buttonAction=sel.value;block.requireCompletion=sel.value==='reveal';persist();renderProperties()};lab.append(sel);box.append(lab);if(sel.value==='internal'){
- const lab=document.createElement('label');lab.className='field';lab.textContent='Go to block';
- const picker=document.createElement('select');
- const empty=document.createElement('option');empty.value='';empty.textContent='Choose a lesson block…';picker.append(empty);
- for(const [lessonIndex,item] of course.lessons.entries()){
-  let n=0;
-  for(const row of item.sections||[])for(const candidate of row.blocks||[]){
-   n++;const option=document.createElement('option');option.value='#'+candidate.id;
-   const description=candidate.type==='multiple-choice'?(candidate.question||'Multiple choice'):candidate.type==='text'?(candidate.text||'Text'):candidate.type==='button'?(candidate.label||'Button'):candidate.type;
-   option.textContent=`${item.title} — Block ${n}: ${String(description).replace(/<[^>]*>/g,'').slice(0,55)}`;
-   if(item.id!==lesson.id)option.disabled=true;
-   picker.append(option);
-  }
- }
- picker.value=block.target||'';
- picker.onchange=()=>{block.target=picker.value;persist()};
- lab.append(picker);box.append(lab);
- const help=document.createElement('p');help.className='small';help.textContent='Choose a block in this lesson. CourseLab stores its ID automatically.';box.append(help);
- }else if(sel.value==='external')field('External HTTPS URL','target');if(sel.value==='reveal'){block.requireCompletion=true;const help=document.createElement('p');help.className='small';help.textContent='Click to reveal following blocks. The button fills its selected column.';box.append(help)}}
+ if(block.type==='button'){
+ field('Button text','label');const lab=document.createElement('label');lab.className='field';lab.textContent='Button destination';const sel=document.createElement('select');
+ [['reveal','Reveal following blocks'],['internal','This lesson'],['lesson','Another lesson in this course'],['course','Another course'],['external','External link']].forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;sel.append(o)});
+ sel.value=block.buttonAction||(block.target?'external':'reveal');sel.onchange=()=>{block.buttonAction=sel.value;block.target='';block.requireCompletion=sel.value==='reveal';persist();renderProperties()};lab.append(sel);box.append(lab);
+ const destination=(label,items)=>{const field=document.createElement('label');field.className='field';field.textContent=label;const picker=document.createElement('select');const empty=document.createElement('option');empty.value='';empty.textContent='Choose a destination…';picker.append(empty);for(const [value,text] of items){const opt=document.createElement('option');opt.value=value;opt.textContent=text;picker.append(opt)}picker.value=block.target||'';picker.onchange=()=>{block.target=picker.value;persist()};field.append(picker);box.append(field)};
+ if(sel.value==='internal'){let n=0;const items=[];for(const row of lesson.sections||[])for(const candidate of row.blocks||[]){n++;if(candidate.id===block.id)continue;items.push(['#'+candidate.id,`${lesson.title} — Block ${n}: ${candidate.type}`])}destination('Go to block in this lesson',items)}
+ else if(sel.value==='lesson')destination('Go to lesson',course.lessons.filter(x=>x.id!==lesson.id).map(x=>[x.id,x.title]));
+ else if(sel.value==='course'){const help=document.createElement('p');help.className='small';help.textContent='Choose a course you own. Learners must have access to the destination course.';box.append(help);destination('Go to another course',[]);CourseLabCloud.db.from('courses').select('id,title').eq('owner_id',course.owner_id).then(({data,error})=>{if(error)return;const picker=box.querySelector('label.field:last-of-type select');if(!picker)return;for(const c of data||[]){if(c.id===course.id)continue;const opt=document.createElement('option');opt.value=c.id;opt.textContent=c.title;picker.append(opt)}picker.value=block.target||''})}
+ else if(sel.value==='external')field('External HTTPS URL','target');
+ else {block.requireCompletion=true;const help=document.createElement('p');help.className='small';help.textContent='Reveals following blocks in this lesson.';box.append(help)}
+}
  if(block.type!=='button'){
  const gate=document.createElement('label');const ck=document.createElement('input');ck.type='checkbox';ck.checked=!!block.requireCompletion;ck.onchange=()=>{block.requireCompletion=ck.checked;persist()};gate.append(ck,document.createTextNode(' Hide following blocks until completed'));box.append(gate);
  const opts=(label,key,values)=>{const w=document.createElement('div');w.className='field';const l=document.createElement('label');l.textContent=label;const sel=document.createElement('select');values.forEach(([value,name])=>{const o=document.createElement('option');o.value=value;o.textContent=name;sel.append(o)});sel.value=String(block[key]??values[0][0]);sel.onchange=()=>{block[key]=key==='maxAttempts'&&sel.value!=='unlimited'?Number(sel.value):sel.value;persist()};w.append(l,sel);box.append(w)};

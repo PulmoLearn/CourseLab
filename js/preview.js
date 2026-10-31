@@ -25,5 +25,8 @@ if(lesson.lessonType==='completion'){
   }
   content.append(card);
 }else{
-  CourseLabActivities.renderLesson(lesson,content);
+  const note=document.createElement('p');note.className='small';note.setAttribute('role','status');
+  const next=document.createElement('button');next.type='button';next.className='button';next.textContent='Continue to next lesson →';next.hidden=true;next.disabled=true;
+  next.onclick=()=>{note.textContent='Preview only — in the published learner course, this button saves completion and advances to the next lesson.'};
+  CourseLabActivities.renderLesson(lesson,content,state=>{next.hidden=!state.ready;next.disabled=!state.ready;note.textContent=state.ready?'All required blocks complete.':'Complete the required activities to continue.'});
 }}}catch(err){root.textContent='Unable to load preview: '+err.message}})();

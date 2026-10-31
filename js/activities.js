@@ -21,6 +21,8 @@ const CourseLabActivities=(()=>{
   b.onclick=()=>{const action=block.buttonAction||(block.target?'external':'reveal');const target=(block.target||'').trim();
    if(action==='reveal'){b.disabled=true;b.setAttribute('aria-pressed','true');status.textContent='';finish();return}
    if(action==='internal'||target.startsWith('#')){const node=document.getElementById(target.replace(/^#/,''));if(node)node.scrollIntoView({behavior:'smooth'});else status.textContent='Destination not found.'}
+   else if(action==='lesson'&&/^[0-9a-f-]{36}$/i.test(target)){window.location.href='learn.html?course='+encodeURIComponent(new URLSearchParams(location.search).get('course')||'')+'&lesson='+encodeURIComponent(target)}
+   else if(action==='course'&&/^[0-9a-f-]{36}$/i.test(target)){window.location.href='learn.html?course='+encodeURIComponent(target)}
    else if(action==='external'&&/^https:\/\//i.test(target))window.open(target,'_blank','noopener,noreferrer');
    else status.textContent='Enter a valid destination in the editor.'};root.append(b,status);return root}
 
