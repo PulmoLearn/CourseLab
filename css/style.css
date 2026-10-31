@@ -88,3 +88,10 @@
 
 /* v0.7b learner completion */
 .cl-completion-card{padding:3rem 2rem;text-align:center;border-radius:20px;background:linear-gradient(140deg,#e7f7f4,#f6f9ff);border:1px solid #b9ded8;margin:1rem 0 2rem}.cl-completion-card h2{font-size:clamp(1.6rem,4vw,2.5rem);color:#087f78}.cl-completion-card p{max-width:42rem;margin:1rem auto;line-height:1.7}#lesson-settings select{margin:.5rem 0 1rem}#lesson-settings textarea{width:100%}
+
+/* Incremental v0.7c lesson type menu */
+.cl-add-lesson-menu{display:grid;gap:3px;padding:6px;margin:6px 0 12px;background:var(--surface,#fff);border:1px solid #b7c9c8;border-radius:12px;box-shadow:0 8px 24px #0002}
+.cl-add-lesson-menu[hidden]{display:none}
+.cl-add-choice{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:3px;background:transparent;color:inherit;border:0;border-radius:7px;padding:10px;width:100%;cursor:pointer}
+.cl-add-choice:hover,.cl-add-choice:focus-visible{background:#e8f4f1;color:#123f39}
+.cl-add-choice span{font-size:.8rem;opacity:.8}
