@@ -59,3 +59,15 @@
 .quick-text-toolbar{pointer-events:auto;isolation:isolate}
 .quick-text-toolbar select,.quick-text-toolbar input{pointer-events:auto;position:relative;z-index:3}
 .editable-text:empty::before{content:'Type text here…';color:#8b98a7;pointer-events:none}
+
+/* v0.4.12: tidy editing and preview states */
+.content-block .editable-text:focus{outline:2px solid #087f78;outline-offset:3px}
+
+/* v0.4.13 image design controls */
+.image-style-panel{margin:1rem 0;padding:.8rem;border:1px solid #cbd7df;border-radius:10px;display:grid;gap:.6rem;min-width:0}
+.image-style-panel legend{font-weight:700;padding:0 .3rem}
+.image-style-field{display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap;font-size:.9rem}
+.image-style-field input[type=number]{width:85px;max-width:100%;padding:.3rem}
+.image-style-field select{max-width:155px;padding:.3rem}
+.image-style-field input[type=color]{width:50px;height:35px}
+.content-block img.cl-image,.preview-block img{max-width:100%;box-sizing:border-box}
