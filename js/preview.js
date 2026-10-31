@@ -1,6 +1,6 @@
 const backLink=document.querySelector('#back-to-editor');const previewParams=new URLSearchParams(location.search);if(backLink&&previewParams.get('course'))backLink.href='editor.html?course='+encodeURIComponent(previewParams.get('course'))+(previewParams.get('lesson')?'&lesson='+encodeURIComponent(previewParams.get('lesson')):'');
 const p=new URLSearchParams(location.search),root=document.querySelector('#preview');
-(async()=>{try{await CourseLabCloud.requireUser();const course=await CourseLabCloud.loadCourse(p.get('course'));const h=document.createElement('h1');h.textContent=course.title;root.append(h);const lessons=p.get('lesson')?course.lessons.filter(l=>l.id===p.get('lesson')):course.lessons;for(const lesson of lessons){const heading=document.createElement('h2');heading.textContent=lesson.title;root.append(heading);const content=document.createElement('div');root.append(content);lesson.brandKit=course.settings?.brandKit;
+(async()=>{try{await CourseLabCloud.requireUser();const course=await CourseLabCloud.loadCourse(p.get('course'));const lessons=course.lessons;const requested=p.get('lesson');const firstIndex=Math.max(0,lessons.findIndex(l=>l.id===requested));const showLesson=async(index)=>{root.replaceChildren();const courseHeading=document.createElement('h1');courseHeading.textContent=course.title;root.append(courseHeading);const lesson=lessons[index];if(!lesson)return;const heading=document.createElement('h2');heading.textContent=lesson.title;root.append(heading);const content=document.createElement('div');root.append(content);lesson.brandKit=course.settings?.brandKit;
 if(lesson.lessonType==='completion'){
   const settings=lesson.completionSettings||{};
   const card=document.createElement('section');
@@ -27,7 +27,7 @@ if(lesson.lessonType==='completion'){
 }else{
   const note=document.createElement('p');note.className='small';note.setAttribute('role','status');
   const next=document.createElement('button');next.type='button';next.className='button';next.textContent='Continue to next lesson →';next.hidden=true;next.disabled=true;
-  next.onclick=()=>{note.textContent='Preview only — in the published learner course, this button saves completion and advances to the next lesson.'};
+  next.onclick=()=>{if(next.disabled||next.hidden)return;if(index<lessons.length-1){showLesson(index+1);root.scrollIntoView({behavior:'smooth',block:'start'});}else{next.disabled=true;next.textContent='Course preview complete ✓';note.textContent='Preview finished. Learner completion is saved only in the published course.'}};
   content.after(next,note);
   CourseLabActivities.renderLesson(lesson,content,state=>{next.hidden=!state.ready;next.disabled=!state.ready;note.textContent=state.ready?'All required blocks complete.':'Complete the required activities to continue.'});
-}}}catch(err){root.textContent='Unable to load preview: '+err.message}})();
+}};await showLesson(firstIndex);}catch(err){root.textContent='Unable to load preview: '+err.message}})();
