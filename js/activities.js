@@ -1,3 +1,4 @@
+function applyCourseLabAppearance(node,model,brand){const a=model?.appearance||{};const palette={text:'#243447',background:'#ffffff',accent1:'#087f78',accent2:'#4b83cc',accent3:'#e6a33d',...(brand||{})};const color=(choice,key)=>choice?.mode==='custom'?choice.hex:(palette[choice?.key]||palette[key]);const valid=v=>typeof v==='string'&&/^#[0-9a-f]{6}$/i.test(v);const bg=color(a.backgroundChoice,'background'),border=color(a.borderChoice,'accent1'),fg=color(a.textChoice,'text');if(valid(bg))node.style.backgroundColor=bg;if(valid(border))node.style.borderColor=border;if(valid(fg))node.style.color=fg;node.style.borderStyle=a.borderEnabled?'solid':'none';node.style.borderWidth=a.borderEnabled?`${Math.max(1,Math.min(8,Number(a.borderWidth)||1))}px`:'0';node.style.borderRadius=a.rounded?`${Math.max(0,Math.min(32,Number(a.radius)||12))}px`:'0';node.style.fontFamily=['Arial','Verdana','Georgia','Trebuchet MS','Tahoma','Montserrat','Atkinson Hyperlegible'].includes(a.fontFamily||palette.fontBody)?(a.fontFamily||palette.fontBody):'Arial';node.style.fontSize=`${Math.max(10,Math.min(64,Number(a.fontSize)||16))}px`;node.style.fontWeight=a.bold?'700':'400';node.style.fontStyle=a.italic?'italic':'normal';}
 /* CourseLab learner-preview activity engine. Local preview progress only. */
 const CourseLabActivities=(()=>{
  const done=new Set();let update=()=>{};
@@ -45,9 +46,9 @@ const CourseLabActivities=(()=>{
  return root}
  function renderLesson(lesson,container){done.clear();container.replaceChildren();const blocks=[];const nodes=[];
  for(const section of lesson.sections||[]){
-  const row=element('div');row.className='block-grid preview-row';row.dataset.cols=String(Math.min(3,Math.max(1,Number(section.cols)||1)));
+  const row=element('div');row.className='block-grid preview-row';row.dataset.cols=String(Math.min(3,Math.max(1,Number(section.cols)||1)));applyCourseLabAppearance(row,section,lesson.brandKit);
   for(const b of section.blocks||[]){
-   const holder=element('section');holder.className='preview-block';holder.id=b.id;
+   const holder=element('section');holder.className='preview-block';holder.id=b.id;applyCourseLabAppearance(holder,b,lesson.brandKit);
    blocks.push(b);nodes.push(holder);row.append(holder);
   }
   container.append(row);
