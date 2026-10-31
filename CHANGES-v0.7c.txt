@@ -1,0 +1,5 @@
+CourseLab v0.7c incremental update
+Replace only files in this ZIP, preserving folder paths.
+Changes: home page free-trial language and two sign-in routes; one login with student/instructor destination; learner page without instructor studio link; instructor dashboard join-by-code and learner course links; proper add-lesson dropdown replacing numeric prompt.
+No SQL migration required. Existing join_course and my_enrolled_courses functions required.
+Security: course ownership and enrollment remain controlled by existing Supabase RLS/RPC; hiding links is not an authorization boundary.
