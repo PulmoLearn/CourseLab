@@ -54,3 +54,8 @@
 .editable-text::selection,.editable-text *::selection{background:#b9dffb;color:#10263b}
 .editable-text:focus{outline:2px solid #4b83cc;border-radius:3px}
 .quick-text-toolbar{position:relative;z-index:2}
+
+/* v0.4.11 keep rich text controls interactive and preserve empty text editing */
+.quick-text-toolbar{pointer-events:auto;isolation:isolate}
+.quick-text-toolbar select,.quick-text-toolbar input{pointer-events:auto;position:relative;z-index:3}
+.editable-text:empty::before{content:'Type text here…';color:#8b98a7;pointer-events:none}
