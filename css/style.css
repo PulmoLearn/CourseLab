@@ -71,3 +71,14 @@
 .image-style-field select{max-width:155px;padding:.3rem}
 .image-style-field input[type=color]{width:50px;height:35px}
 .content-block img.cl-image,.preview-block img{max-width:100%;box-sizing:border-box}
+
+/* v0.4.14 shared image formatting and four-edge crop */
+.cl-image-frame{display:block;max-width:100%;vertical-align:middle;flex-shrink:0}
+.cl-image-frame img{max-width:none!important}
+.crop-edges{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.4rem;margin:.5rem 0;padding:.7rem;border:1px solid #d3dce3;border-radius:8px}
+.crop-edges strong{grid-column:1/-1;font-size:.85rem}
+.crop-edges label{display:flex;align-items:center;justify-content:space-between;gap:.25rem;font-size:.85rem}
+.crop-edges input{width:65px;max-width:55%;min-width:0}
+.selected-media span{overflow-wrap:anywhere;min-width:0}
+.selected-media button{white-space:normal;overflow-wrap:anywhere;min-width:0}
+.mc-image{max-width:100%}
