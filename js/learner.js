@@ -33,7 +33,7 @@
  if(l.content?.lessonType==='completion'){
   const settings=l.content.completionSettings||{};const wrap=document.createElement('section');wrap.className='cl-completion-card';const title=document.createElement('h2');title.textContent=settings.heading||'Congratulations!';const message=document.createElement('p');message.textContent=settings.message||'You have completed this course.';wrap.append(title,message);$('lesson-content').replaceChildren(wrap);
   currentActivity={isReady:()=>true};$('mark-complete').hidden=false;$('mark-complete').disabled=false;
- }else{currentActivity=CourseLabActivities.renderLesson(model,$('lesson-content'),state=>{const canProceed=completed.has(l.id)||state.ready;$('mark-complete').hidden=!canProceed;$('mark-complete').disabled=!canProceed;$('lesson-status').textContent=canProceed?'Ready to continue.':`Complete required activities to continue (${state.completed}/${state.total}).`;});}
+ }else{currentActivity=CourseLabActivities.renderLesson(model,$('lesson-content'),state=>{const canProceed=completed.has(l.id)||state.ready;$('mark-complete').hidden=!canProceed;$('mark-complete').disabled=!canProceed;$('lesson-status').textContent=canProceed?'Ready to continue.':`Finish revealing and completing the lesson blocks to continue (${state.completed}/${state.total} activities).`;});}
  if(completed.has(l.id)){$('mark-complete').hidden=false;$('mark-complete').disabled=false;}
  
  }
