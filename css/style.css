@@ -25,3 +25,11 @@
 .content-block>.lesson-reveal-button{width:100%;min-height:48px}
 .preview-block{width:100%}
 @media(prefers-reduced-motion:reduce){.flashcard-flipper{transition:none!important}}
+
+/* v0.4.7: Preserve author-selected row columns in learner preview. */
+.preview-content .preview-row{display:grid;gap:.8rem;align-items:stretch;margin:1rem 0 1.5rem}
+.preview-content .preview-row[data-cols="1"]{grid-template-columns:minmax(0,1fr)}
+.preview-content .preview-row[data-cols="2"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+.preview-content .preview-row[data-cols="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+.preview-content .preview-row>.preview-block{min-width:0;margin:0}
+@media(max-width:600px){.preview-content .preview-row[data-cols="2"],.preview-content .preview-row[data-cols="3"]{grid-template-columns:minmax(0,1fr)}}
