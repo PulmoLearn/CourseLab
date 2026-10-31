@@ -1,27 +1,21 @@
-# CourseLab — Starter prototype
+# CourseLab v0.2 — Instructor accounts and cloud lessons
 
-An early static-site prototype of a visual course authoring tool for teachers and instructional designers.
+Static HTML/CSS/JS app, deployed to Vercel with **Other** framework preset and root directory `./`.
 
-## Deploy to Vercel
+## Setup
 
-1. Add all files and folders at the repository root (not inside an extra `courselab-starter` folder).
-2. Import the GitHub repository into Vercel.
-3. Framework preset: **Other**. No build command or environment variables are needed.
-4. Deploy. The root `index.html` serves the public landing page.
+1. Use the separate CourseLab Supabase project. The `instructor_profiles`, `courses`, and `lessons` tables and authenticated RLS policies must already exist.
+2. Under Authentication → URL Configuration, set Site URL to `https://courselab-lac.vercel.app` and add redirect URL `https://courselab-lac.vercel.app/**`.
+3. Enable Email sign-in and confirm-email.
+4. Upload **the contents** of this folder to the root of the CourseLab GitHub repository; Vercel redeploys on commit.
+5. Visit `/login.html`, create an instructor account, confirm email, sign in, create a course, edit a lesson, and open the preview.
 
-## Demo
+## Important
 
-- `index.html` — public landing page.
-- `dashboard.html` — create, duplicate, delete courses.
-- `editor.html` — add lessons, rows (1–3 columns), text/image/video placeholders, edit text, duplicate lessons, export JSON.
-- `preview.html` — learner-facing preview.
-
-**Important:** Courses are saved only to the current browser's `localStorage`. Data does not sync between devices and can be erased by clearing browser data. This is not a production LMS, and there is no authentication or purchasing.
-
-## Accessibility
-
-Accessibility is a design priority, with semantic structure, visible focus, keyboard-operable editing controls, and image alt-text prompts. This prototype has not undergone a WCAG 2.2 AA conformance audit. Further work is required on keyboard focus management, accessible activity editing, contrast testing, and exported lesson accessibility.
-
-## Roadmap
-
-Supabase authentication and persistence, rich text editing, interactive activities, asset uploads, automated accessibility checks, HTML/SCORM exports, and optional small-group learner delivery.
+- `js/cloud.js` contains a **publishable** Supabase key, safe to expose when RLS is correctly configured. Never place a secret or service-role key in browser code.
+- The Supabase CDN script requires internet connectivity.
+- The previously deployed browser-only prototype is not automatically migrated. Export any old work as JSON before replacing it; importing that JSON is not yet implemented.
+- Auto-save uses a short delay. Wait until “Saved to cloud” appears before navigating away.
+- The public homepage remains public. The dashboard/editor/preview require a session; RLS protects database rows.
+- This is a development prototype, not a production-ready audited application. SCORM, full accessibility validation, and enrollment are not yet implemented.
+- Existing Vercel environment variables are not used by these static files; the public configuration is in `js/cloud.js`.
