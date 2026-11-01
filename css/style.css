@@ -91,3 +91,6 @@
 
 /* v0.7j: honor hidden state for Continue and all activity controls */
 [hidden]{display:none!important}
+
+/* CourseLab organizer and inline drag handles */
+.cl-grip{cursor:grab!important;touch-action:none;min-width:32px;padding:4px 8px!important;border:1px solid #b9cbd0!important;background:#fff!important;color:#38546a!important;border-radius:7px;font-size:22px;line-height:1.2}.cl-block-grip{position:absolute;left:4px;top:4px;z-index:10}.cl-drop-target{outline:3px dashed #0a8c84!important;outline-offset:2px}.cl-organizer{width:min(720px,95vw);max-height:85vh;border:1px solid #c7d5dc;border-radius:16px;padding:24px;color:#0b1f33}.cl-organizer::backdrop{background:rgba(8,20,32,.55)}.cl-organizer-row{border:1px solid #d0dce2;border-radius:9px;margin:10px 0;padding:8px}.cl-organizer-line{display:flex;align-items:center;gap:10px;min-height:40px;padding:5px}.cl-organizer-line input{width:18px;height:18px}.cl-outline-grip{cursor:grab;font-size:24px;color:#4e6975;user-select:none}.cl-organizer-blocks{padding-left:24px}.cl-organizer-block{border-top:1px solid #edf0f2}.cl-organizer .toolbar{margin-top:18px;flex-wrap:wrap}[hidden]{display:none!important}
