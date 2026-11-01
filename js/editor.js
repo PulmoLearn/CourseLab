@@ -99,7 +99,7 @@ function render(){document.title=`${course.title} · CourseLab`;$('#course-name'
  addImage(panel,block.questionImageAssetId,block.questionImage,block.questionImageAlt,imageStyleTarget(block,'questionImageStyle'),block.id+'-question');
  (block.choices||[]).forEach((answer,i)=>{const option=document.createElement('div');option.className='mc-editor-option';const marker=document.createElement('span');marker.textContent=String.fromCharCode(65+i)+'.';option.append(marker);const content=document.createElement('div');const txt=document.createElement('div');txt.textContent=answer||'Empty answer';content.append(txt);block.choiceImageStyles??=[];addImage(content,block.choiceImageAssetIds?.[i],block.choiceImages?.[i],block.choiceAlts?.[i],block.choiceImageStyles[i]??={},block.id+'-answer-'+i);option.append(content);panel.append(option)});
  el.append(panel);
- }else if(block.type==='button'){const preview=document.createElement('button');preview.type='button';preview.className='lesson-reveal-button';preview.textContent=block.label||'Continue';preview.onclick=event=>{event.stopPropagation();selected=block.id;selectedRow=null;showBrandKit=false;renderProperties()};el.append(preview)}else el.textContent='Activity placeholder';el.onclick=()=>{selected=block.id;selectedRow=null;showBrandKit=false;render()};el.onkeydown=e=>{if(e.target.isContentEditable)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();selected=block.id;selectedRow=null;showBrandKit=false;render()}};grid.append(el)});wrap.append(grid);const add=document.createElement('div');add.className='toolbar';['text','image','video','flashcards','multiple-choice','button'].forEach(type=>{const b=document.createElement('button');b.className='secondary';b.textContent=`+ ${type}`;b.onclick=()=>{const block={id:CourseLab.id(),type,text:'',url:'',alt:'',cards:[{front:'Front of card',back:'Back of card'}],cardMode:'content',buttonAction:'reveal',question:'Your question',choices:['Option A','Option B','Option C'],correct:0,label:'Continue',target:'',requireCompletion:type==='button',completionMode:'correct',maxAttempts:3,gradeMode:'highest'};section.blocks.push(block);selected=block.id;selectedRow=null;showBrandKit=false;persist();render()};add.append(b)});wrap.append(add);canvas.append(wrap)});renderProperties();renderDesignPanel();renderQuickToolbar()}
+ }else if(block.type==='button'){const preview=document.createElement('button');preview.type='button';preview.className='lesson-reveal-button';preview.textContent=block.label||'Continue';preview.onclick=event=>{event.stopPropagation();selected=block.id;selectedRow=null;showBrandKit=false;renderProperties()};el.append(preview)}else el.textContent='Activity placeholder';el.onclick=()=>{selected=block.id;selectedRow=null;showBrandKit=false;render()};el.onkeydown=e=>{if(e.target.isContentEditable)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();selected=block.id;selectedRow=null;showBrandKit=false;render()}};grid.append(el)});wrap.append(grid);const add=document.createElement('div');add.className='toolbar';['text','image','video','flashcards','multiple-choice','button'].forEach(type=>{const b=document.createElement('button');b.className='secondary';b.textContent=`+ ${type}`;b.onclick=()=>{const block={id:CourseLab.id(),type,text:'',url:'',alt:'',cards:[{front:'Front of card',back:'Back of card'}],cardMode:'content',buttonAction:'reveal',question:'Your question',choices:['Option A','Option B','Option C'],correct:0,label:'Continue',target:'',requireCompletion:type==='button',completionMode:'correct',maxAttempts:3,gradeMode:'highest'};section.blocks.push(block);selected=block.id;selectedRow=null;showBrandKit=false;persist();render()};add.append(b)});wrap.append(add);canvas.append(wrap)});renderProperties();renderDesignPanel();renderQuickToolbar();setupOrganizerHandles()}
 function renderCanvasAppearance(){for(const section of lesson.sections){const row=document.querySelector(`[data-appearance-row="${section.id}"]`);if(row)applyBrandAppearance(row,section);for(const block of section.blocks){const el=document.querySelector(`[data-appearance-block="${block.id}"]`);if(el)applyBrandAppearance(el,block)}}}
 function renderProperties(){const box=$('#properties');box.innerHTML='';let section,block;for(const s of lesson.sections){const b=s.blocks.find(b=>b.id===selected);if(b){section=s;block=b;break}}if(showBrandKit){renderBrandKit();return}if(!block){const row=lesson.sections.find(s=>s.id===selectedRow);if(row){const h=document.createElement('h3');h.textContent='Row design';box.append(h);renderDesignPanel();return}box.innerHTML='<p class="small">Select a content block or choose Style row.</p>';return}renderDesignPanel();const heading=document.createElement('h3');heading.textContent=`${block.type[0].toUpperCase()+block.type.slice(1)} block`;box.append(heading);function field(label,key,multiline=false){const wrap=document.createElement('div');wrap.className='field';const id='field-'+key;const l=document.createElement('label');l.htmlFor=id;l.textContent=label;const input=document.createElement(multiline?'textarea':'input');input.id=id;input.value=block[key]||'';if(multiline)input.rows=5;input.oninput=()=>{block[key]=input.value;if(key==='text')block.richHtml=null;persist();const visual=document.querySelector('.content-block.selected');if(visual&&block.type==='text')visual.querySelector('p').textContent=block.text||'Empty text block'};wrap.append(l,input);box.append(wrap)}if(block.type==='text')field('Text content','text',true);if(block.type==='image'){
  const upload=document.createElement('input');upload.type='file';upload.accept='image/jpeg,image/png,image/webp,image/gif';upload.setAttribute('aria-label','Upload image from computer');upload.onchange=async()=>{const f=upload.files?.[0];if(!f)return;try{box.setAttribute('aria-busy','true');const id=await CourseLabMedia.upload(f,f.name);block.assetId=id;block.url='';persist();render()}catch(e){$('#status').textContent='Upload failed: '+e.message}finally{box.removeAttribute('aria-busy')}};box.append(upload);
@@ -201,3 +201,99 @@ document.addEventListener('click',event=>{
  selected=null;selectedRow=null;savedRichRange=null;
  render();
 });
+
+
+// CourseLab Organizer: all reorders operate on the live draft objects and preserve IDs.
+let organizerSelection=new Set();
+function organizerMoveRows(ids,to){
+ const chosen=lesson.sections.filter(r=>ids.includes(r.id));
+ if(!chosen.length)return;
+ const rest=lesson.sections.filter(r=>!ids.includes(r.id));
+ rest.splice(Math.max(0,Math.min(to,rest.length)),0,...chosen);
+ lesson.sections=rest;persist();render();
+}
+function organizerMoveBlocks(ids,targetRowId,at,createRow=false){
+ const moving=[];
+ for(const r of lesson.sections)for(const b of r.blocks)if(ids.includes(b.id))moving.push(b);
+ if(!moving.length)return;
+ for(const r of lesson.sections)r.blocks=r.blocks.filter(b=>!ids.includes(b.id));
+ let dest=lesson.sections.find(r=>r.id===targetRowId);
+ if(createRow){const idx=lesson.sections.indexOf(dest);dest={id:CourseLab.id(),cols:1,blocks:[]};lesson.sections.splice(idx+1,0,dest)}
+ if(!dest)return;
+ dest.blocks.splice(Math.max(0,Math.min(at,dest.blocks.length)),0,...moving);
+ persist();render();
+}
+function setupOrganizerHandles(){
+ const canvas=document.querySelector('#canvas');if(!canvas)return;
+ [...canvas.children].forEach((panel,ri)=>{
+  const row=lesson.sections[ri];if(!row)return;
+  const bar=panel.querySelector('.toolbar');if(!bar)return;
+  const grip=document.createElement('button');grip.type='button';grip.className='cl-grip';grip.textContent='⠿';grip.title='Drag to reorder row';grip.setAttribute('aria-label','Drag row '+(ri+1));grip.draggable=true;bar.prepend(grip);
+  grip.ondragstart=e=>{e.stopPropagation();e.dataTransfer.setData('text/plain',JSON.stringify({kind:'row',ids:[row.id]}));e.dataTransfer.effectAllowed='move'};
+  panel.ondragover=e=>{e.preventDefault();panel.classList.add('cl-drop-target')};
+  panel.ondragleave=e=>{if(!panel.contains(e.relatedTarget))panel.classList.remove('cl-drop-target')};
+  panel.ondrop=e=>{e.preventDefault();e.stopPropagation();panel.classList.remove('cl-drop-target');let payload;try{payload=JSON.parse(e.dataTransfer.getData('text/plain'))}catch{return}
+   if(payload.kind==='row'){const remaining=lesson.sections.filter(r=>!payload.ids.includes(r.id));const index=remaining.findIndex(r=>r.id===row.id);organizerMoveRows(payload.ids,index<0?remaining.length:index+(e.clientY>panel.getBoundingClientRect().top+panel.offsetHeight/2?1:0))}
+   else if(payload.kind==='block'){organizerMoveBlocks(payload.ids,row.id,row.blocks.length,e.clientY<panel.getBoundingClientRect().top+26)}
+  };
+  const grid=panel.querySelector('.block-grid');if(!grid)return;
+  [...grid.children].forEach((el,bi)=>{
+   const b=row.blocks[bi];if(!b)return;el.style.position='relative';
+   const handle=document.createElement('button');handle.type='button';handle.className='cl-grip cl-block-grip';handle.textContent='⠿';handle.title='Drag block to move';handle.setAttribute('aria-label','Drag block '+(bi+1));handle.draggable=true;
+   handle.onclick=e=>e.stopPropagation();handle.ondragstart=e=>{e.stopPropagation();e.dataTransfer.setData('text/plain',JSON.stringify({kind:'block',ids:[b.id]}));e.dataTransfer.effectAllowed='move'};
+   el.prepend(handle);
+   el.ondragover=e=>{e.preventDefault();e.stopPropagation();el.classList.add('cl-drop-target')};
+   el.ondragleave=()=>el.classList.remove('cl-drop-target');
+   el.ondrop=e=>{e.preventDefault();e.stopPropagation();el.classList.remove('cl-drop-target');let p;try{p=JSON.parse(e.dataTransfer.getData('text/plain'))}catch{return}
+    if(p.kind==='block'){const before=e.clientY<el.getBoundingClientRect().top+el.offsetHeight/2;organizerMoveBlocks(p.ids,row.id,bi+(before?0:1))}
+   };
+  });
+ });
+ let btn=document.querySelector('#cl-organize');if(!btn){btn=document.createElement('button');btn.id='cl-organize';btn.type='button';btn.className='secondary';btn.textContent='☷ Organize';document.querySelector('#course-name')?.insertAdjacentElement('afterend',btn)}
+ btn.onclick=openLessonOrganizer;
+}
+function openLessonOrganizer(){
+ document.querySelector('#cl-organizer-dialog')?.remove();
+ const dialog=document.createElement('dialog');dialog.id='cl-organizer-dialog';dialog.className='cl-organizer';
+ const title=document.createElement('h2');title.textContent='Lesson Organizer';dialog.append(title);
+ const tip=document.createElement('p');tip.className='small';tip.textContent='Drag ⠿ to reorder. Select multiple rows or blocks to move or copy together. Drop a block on a row to move it there.';dialog.append(tip);
+ const outline=document.createElement('div');dialog.append(outline);
+ const actions=document.createElement('div');actions.className='toolbar';dialog.append(actions);
+ const close=document.createElement('button');close.className='secondary';close.textContent='Close';close.onclick=()=>dialog.close();actions.append(close);
+ const copy=document.createElement('button');copy.textContent='Copy selected to lesson…';actions.append(copy);
+ const selStatus=document.createElement('span');selStatus.className='small';actions.append(selStatus);
+ const effectiveIds=()=>{const rows=lesson.sections.filter(r=>organizerSelection.has(r.id));return {rows,blocks:lesson.sections.flatMap(r=>rows.includes(r)?[]:r.blocks.filter(b=>organizerSelection.has(b.id)))} };
+ const draw=()=>{outline.replaceChildren();selStatus.textContent=organizerSelection.size+' selected';
+  lesson.sections.forEach((r,ri)=>{
+   const group=document.createElement('div');group.className='cl-organizer-row';
+   const line=document.createElement('div');line.className='cl-organizer-line';
+   const handle=document.createElement('span');handle.className='cl-outline-grip';handle.textContent='⠿';handle.draggable=true;handle.title='Drag row';line.append(handle);
+   handle.ondragstart=e=>{const ids=organizerSelection.has(r.id)?lesson.sections.filter(x=>organizerSelection.has(x.id)).map(x=>x.id):[r.id];e.dataTransfer.setData('text/plain',JSON.stringify({kind:'row',ids}))};
+   const check=document.createElement('input');check.type='checkbox';check.checked=organizerSelection.has(r.id);check.onchange=()=>{if(check.checked)organizerSelection.add(r.id);else organizerSelection.delete(r.id);draw()};line.append(check);
+   const collapse=document.createElement('button');collapse.className='secondary';collapse.textContent='▾';collapse.title='Collapse row';line.append(collapse);
+   const label=document.createElement('strong');label.textContent='Row '+(ri+1)+' · '+r.blocks.length+' blocks';line.append(label);group.append(line);
+   const contents=document.createElement('div');contents.className='cl-organizer-blocks';group.append(contents);
+   collapse.onclick=()=>{contents.hidden=!contents.hidden;collapse.textContent=contents.hidden?'▸':'▾'};
+   const receive=(element,kind,id,index)=>{element.ondragover=e=>{e.preventDefault();element.classList.add('cl-drop-target')};element.ondragleave=()=>element.classList.remove('cl-drop-target');element.ondrop=e=>{e.preventDefault();e.stopPropagation();element.classList.remove('cl-drop-target');let p;try{p=JSON.parse(e.dataTransfer.getData('text/plain'))}catch{return}if(p.kind==='row'&&kind==='row'){const remaining=lesson.sections.filter(x=>!p.ids.includes(x.id));const i=remaining.findIndex(x=>x.id===id);organizerMoveRows(p.ids,i<0?remaining.length:i)}else if(p.kind==='block'){organizerMoveBlocks(p.ids,r.id,kind==='block'?index:r.blocks.length)}draw()}};
+   receive(line,'row',r.id,0);
+   r.blocks.forEach((b,bi)=>{
+    const item=document.createElement('div');item.className='cl-organizer-line cl-organizer-block';
+    const grip=document.createElement('span');grip.textContent='⠿';grip.className='cl-outline-grip';grip.draggable=true;item.append(grip);
+    grip.ondragstart=e=>{const ids=organizerSelection.has(b.id)?effectiveIds().blocks.map(x=>x.id):[b.id];e.dataTransfer.setData('text/plain',JSON.stringify({kind:'block',ids}))};
+    const cb=document.createElement('input');cb.type='checkbox';cb.checked=organizerSelection.has(b.id);cb.onchange=()=>{if(cb.checked)organizerSelection.add(b.id);else organizerSelection.delete(b.id);draw()};item.append(cb);
+    const text=document.createElement('span');text.textContent=`Block ${bi+1} · ${b.type} · ${String(b.question||b.label||b.text||b.url||'').replace(/<[^>]+>/g,'').slice(0,45)}`;item.append(text);
+    receive(item,'block',b.id,bi);contents.append(item);
+   });outline.append(group);
+  });
+ };
+ copy.onclick=async()=>{const {rows,blocks}=effectiveIds();if(!rows.length&&!blocks.length){alert('Select at least one row or block.');return}
+  const targets=course.lessons.filter(l=>l.id!==lesson.id);if(!targets.length){alert('Create another lesson first.');return}
+  const target=prompt('Copy to lesson number:\n'+targets.map((l,i)=>`${i+1}. ${l.title}`).join('\n'));if(!target)return;
+  const dest=targets[Number(target)-1];if(!dest){alert('Invalid lesson number.');return}
+  const clone=b=>({...structuredClone(b),id:CourseLab.id()});
+  const newRows=rows.map(r=>({...structuredClone(r),id:CourseLab.id(),blocks:r.blocks.map(clone)}));
+  if(blocks.length)newRows.push({id:CourseLab.id(),cols:1,blocks:blocks.map(clone)});
+  dest.sections.push(...newRows);try{await flush();const {error}=await CourseLabCloud.db.from('lessons').update({content:{sections:dest.sections,lessonType:dest.lessonType||'standard',assessmentSettings:dest.assessmentSettings||{},completionSettings:dest.completionSettings||{}}}).eq('id',dest.id);if(error)throw error;organizerSelection.clear();draw();alert('Copied to '+dest.title)}catch(e){alert('Copy failed: '+e.message)}
+ };
+ document.body.append(dialog);draw();dialog.showModal();dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+}
