@@ -54,6 +54,9 @@ if(lesson.lessonType==='completion'){
   const previewLesson={...lesson,id:raw.id,title:raw.title,
     lessonType:stored.lessonType,sections,brandKit:course.settings?.brandKit,
     content:{...stored,riseBlocks,sections}};
+  if(imported && (typeof CourseLabRise==='undefined' || typeof CourseLabRise.render!=='function')){
+    throw new Error('Imported lesson renderer is missing. Confirm js/rise-imported.js was uploaded to GitHub alongside preview.html and js/preview.js; then redeploy and refresh.');
+  }
   const renderer=imported?CourseLabRise.render:CourseLabActivities.renderLesson;
   if(typeof renderer!=='function')throw new Error('The '+(imported?'imported Rise':'standard')+' lesson renderer did not load. Refresh the page.');
   renderer(previewLesson,content,state=>{next.hidden=!state.ready;next.disabled=!state.ready;note.textContent=state.ready?'All required blocks complete.':'Complete the required activities to continue.'});
