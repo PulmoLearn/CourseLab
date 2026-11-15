@@ -36,9 +36,26 @@
  }else{
   let savedResearch=[];
   if(!test && l.content?.riseBlocks?.some(b=>['survey','quiz'].includes(b.type))){
-    const {data,error}=await db.rpc('courselab_my_research',{p_course:id,p_version:v.id,p_lesson:l.id});
+    // Make failed RPCs visible WHERE the lesson content normally appears.
+    // Do not display an empty lesson, and do not allow an unverified first submission.
+    $('lesson-content').replaceChildren();
+    const loading=document.createElement('p');loading.textContent='Loading saved research responses…';
+    $('lesson-content').append(loading);
+    let data,error;
+    try { ({data,error}=await db.rpc('courselab_my_research',{p_course:id,p_version:v.id,p_lesson:l.id})); }
+    catch(e) { error=e; }
     if(token!==renderToken)return;
-    if(error){$('lesson-status').textContent='Research responses could not be loaded: '+error.message;return;}
+    if(error){
+      const panel=document.createElement('div');panel.className='panel';
+      const heading=document.createElement('h4');heading.textContent='Research survey unavailable';
+      const detail=document.createElement('p');detail.textContent='The course loaded, but the research database could not verify any previously submitted responses. To protect the study data, this activity cannot be submitted yet.';
+      const diagnostic=document.createElement('p');diagnostic.className='small';diagnostic.textContent='Database error: '+(error.message||String(error));
+      const retry=document.createElement('button');retry.className='secondary';retry.type='button';retry.textContent='Retry loading survey';retry.onclick=()=>renderLesson();
+      panel.append(heading,detail,diagnostic,retry);
+      $('lesson-content').replaceChildren(panel);
+      $('lesson-status').textContent='Research data unavailable — please retry or report the database error to the instructor.';
+      return;
+    }
     savedResearch=data||[];
   }
   const research={saved:savedResearch,save:async(blockIndex,answers)=>{
@@ -46,7 +63,16 @@
     const {data,error}=await db.rpc('courselab_submit_research',{p_course:id,p_version:v.id,p_lesson:l.id,p_block:blockIndex,p_answers:answers});
     if(error)throw error;return data;
   }};
-  currentActivity=(l.content?.lessonType==='rise-import'?CourseLabRise.render:CourseLabActivities.renderLesson)(model,$('lesson-content'),state=>{const canProceed=completed.has(l.id)||state.ready;$('mark-complete').hidden=!canProceed;$('mark-complete').disabled=!canProceed;$('lesson-status').textContent=canProceed?'Ready to continue.':`Finish revealing and completing the lesson blocks to continue (${state.completed}/${state.total} activities).`;},research);}
+  try{
+    const isRise=l.content?.lessonType==='rise-import'||Array.isArray(l.content?.riseBlocks);
+    const renderer=isRise?window.CourseLabRise?.render:window.CourseLabActivities?.renderLesson;
+    if(typeof renderer!=='function')throw Error(isRise?'Imported lesson renderer did not load. Check js/rise-imported.js.':'CourseLab lesson renderer did not load.');
+    currentActivity=renderer(model,$('lesson-content'),state=>{const canProceed=completed.has(l.id)||state.ready;$('mark-complete').hidden=!canProceed;$('mark-complete').disabled=!canProceed;$('lesson-status').textContent=canProceed?'Ready to continue.':`Finish revealing and completing the lesson blocks to continue (${state.completed}/${state.total} activities).`;},research);
+  }catch(err){
+    $('lesson-content').textContent='Unable to display this lesson: '+err.message;
+    $('lesson-status').textContent='Lesson renderer error. Please report the message above.';
+    return;
+  }}
  if(completed.has(l.id)){$('mark-complete').hidden=false;$('mark-complete').disabled=false;}
  
  }
