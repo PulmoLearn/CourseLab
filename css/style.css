@@ -129,3 +129,11 @@
 /* Visible selection for imported blocks using the shared Properties / Design controls. */
 .rise-edit-block.selected{outline:3px solid #087f78;outline-offset:2px}
 .rise-edit-block:focus-visible{outline:3px solid #087f78;outline-offset:2px}
+
+/* Accessible imported learning activities (Educational Philosophies pilot) */
+.rise-question :is(input,textarea,select):focus-visible,.rise-sort-row select:focus-visible,.rise-import-block button:focus-visible,.cl-lesson-item:focus-visible{outline:3px solid #075e59;outline-offset:3px}
+.rise-question legend .rise-rich :first-child{margin-top:0}
+.rise-question textarea{width:100%;box-sizing:border-box}
+.rise-sort-row select{min-height:44px}
+.rise-import-block button{min-height:44px}
+@media (prefers-reduced-motion: reduce){.rise-import-block *, .rise-import-block *::before,.rise-import-block *::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
