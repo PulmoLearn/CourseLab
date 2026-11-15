@@ -42,7 +42,7 @@
     const loading=document.createElement('p');loading.textContent='Loading saved research responses…';
     $('lesson-content').append(loading);
     let data,error;
-    try { ({data,error}=await db.rpc('courselab_my_research',{p_course:id,p_version:v.id,p_lesson:l.id})); }
+    try { ({data,error}=await db.rpc('courselab_my_research',{p_course:courseId,p_version:version.id,p_lesson:l.id})); }
     catch(e) { error=e; }
     if(token!==renderToken)return;
     if(error){
@@ -60,7 +60,7 @@
   }
   const research={saved:savedResearch,save:async(blockIndex,answers)=>{
     if(test)return {saved:true,preview:true};
-    const {data,error}=await db.rpc('courselab_submit_research',{p_course:id,p_version:v.id,p_lesson:l.id,p_block:blockIndex,p_answers:answers});
+    const {data,error}=await db.rpc('courselab_submit_research',{p_course:courseId,p_version:version.id,p_lesson:l.id,p_block:blockIndex,p_answers:answers});
     if(error)throw error;return data;
   }};
   try{
