@@ -15,6 +15,22 @@ const CourseLabRise = (()=>{
   const inform=()=>{if(live&&typeof onChange==='function')onChange({ready:required.every(k=>completed.has(k)),completed:completed.size,total:required.length})};
   const requirement=(key)=>{required.push(key);return ()=>{completed.add(key);inform()}};
   blocks.forEach((b,bi)=>{const wrapper=e('section','rise-import-block');container.append(wrapper);
+   if(b.appearance && Object.keys(b.appearance).length){
+    const a=b.appearance;
+    const defaults={text:'#243447',background:'#ffffff',accent1:'#087f78',accent2:'#4b83cc',accent3:'#e6a33d'};
+    const palette=(typeof window!=='undefined' && window.CourseLabBrandKit)||defaults;
+    const color=(choice,fallback)=>{const v=choice?.mode==='custom'?choice.hex:palette[choice?.key||fallback];return /^#[0-9a-f]{6}$/i.test(v||'')?v:null};
+    const text=color(a.textChoice,'text'),bg=color(a.backgroundChoice,'background'),border=color(a.borderChoice,'accent1');
+    if(text)wrapper.style.color=text;if(bg)wrapper.style.backgroundColor=bg;
+    if(a.borderEnabled){wrapper.style.border=`${Math.max(1,Math.min(8,Number(a.borderWidth)||1))}px solid ${border||defaults.accent1}`}
+    if(a.rounded)wrapper.style.borderRadius=Math.max(0,Math.min(32,Number(a.radius)||12))+'px';
+    if(a.fontFamily&&['Arial','Verdana','Georgia','Trebuchet MS','Tahoma','Montserrat','Atkinson Hyperlegible'].includes(a.fontFamily))wrapper.style.fontFamily=a.fontFamily;
+    if(a.fontSize)wrapper.style.fontSize=Math.max(10,Math.min(64,Number(a.fontSize)))+'px';
+    if(a.bold)wrapper.style.fontWeight='700';if(a.italic)wrapper.style.fontStyle='italic';
+    if(['left','center','right'].includes(a.textAlign))wrapper.style.textAlign=a.textAlign;
+    if(['top','middle','bottom'].includes(a.verticalAlign)){wrapper.style.display='flex';wrapper.style.flexDirection='column';wrapper.style.justifyContent={top:'flex-start',middle:'center',bottom:'flex-end'}[a.verticalAlign]}
+    wrapper.style.padding=Math.max(6,Math.min(48,Number(a.padding)||16))+'px';
+   }
    if(b.type==='text'){
     for(const item of b.items||[]){if(item.heading)wrapper.append(rich(item.heading));if(item.paragraph)wrapper.append(rich(item.paragraph));if(item.text)wrapper.append(rich(item.text));if(item.title)wrapper.append(rich(item.title))}
    }else if(b.type==='list'){
