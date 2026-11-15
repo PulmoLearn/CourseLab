@@ -1,0 +1,15 @@
+Educational Philosophies accessibility priority patch
+
+Replace these files in your GitHub repository, preserving paths:
+js/rise-imported.js
+js/learner.js
+learn.html
+css/style.css
+
+Commit and deploy via Vercel. No Supabase migration or course reimport required.
+
+Scope: screen reader announcements for saved/submitted quiz and survey feedback; accessible textarea names; per-item labels for sorting selection; focus first unanswered input; descriptive YouTube frame titles; keyboard focus on lesson changes; visible keyboard focus and reduced motion.
+
+Manual testing required: VoiceOver/NVDA, keyboard-only, zoom/reflow, contrast, meaningful image alt text, caption accuracy, content reading order. This patch does not certify WCAG 2.2 AA compliance.
+
+This package was built by applying previously delivered CourseLab updates in conversation order to the uploaded repository. If GitHub has additional newer edits, reconcile before replacement.
