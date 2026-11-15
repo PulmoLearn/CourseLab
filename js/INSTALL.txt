@@ -1,0 +1,1 @@
+Replace only these 3 files at their matching repository paths. Commit to GitHub, wait for Vercel deploy, then hard-refresh the editor and preview. Do not reimport or republish solely to test draft preview. This patch reads the raw saved lesson from Supabase and shows a specific diagnostic if stored content is missing.
