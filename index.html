@@ -1,1 +1,89 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="CourseLab helps educators design accessible, engaging learning experiences and prepare content for any LMS."><title>CourseLab | Create learning that goes further</title><link rel="stylesheet" href="css/style.css"></head><body><a class="sr-only" href="#main">Skip to content</a><header class="site-header"><a class="brand" href="index.html">Course<span>Lab</span></a><nav class="nav" aria-label="Main navigation"><a href="#features">Features</a><a href="#accessibility">Accessibility</a><a href="#pricing">Pricing</a><a class="button" href="login.html?next=dashboard.html">Instructor sign in</a></nav></header><main id="main"><section class="container hero"><div><p class="eyebrow">Made for educators and instructional designers</p><h1>Build learning experiences worth sharing.</h1><p class="lead">Create thoughtful, engaging lessons with a visual editor built around how educators work. Design here. Teach anywhere.</p><div class="actions"><a class="button" href="login.html?next=dashboard.html">Instructor sign in</a><a class="button secondary" href="login.html?next=learn.html">Student sign in</a><a class="button secondary" href="#features">See what we're building</a></div><p class="small">Free trial access · Sign in or create an account to get started</p></div><div class="mock" role="img" aria-label="Illustration of the CourseLab editor with a navigation sidebar and two-column lesson layout"><div class="mock-sidebar"></div><div class="mock-main"><div class="mock-line"></div><div class="mock-line short"></div><div class="mock-blocks"><div></div><div></div></div></div></div></section><section class="section" id="features"><div class="container"><p class="eyebrow">Designed for real teaching</p><h2>From idea to instruction, without the friction.</h2><div class="cards"><article class="card"><h3>Visual lesson building</h3><p>Arrange content in flexible rows and columns, then add text, images, and video references.</p></article><article class="card"><h3>Reusable course content</h3><p>Organize lessons and duplicate work without starting from scratch.</p></article><article class="card"><h3>Built for portability</h3><p>Start with structured course data. HTML and SCORM publishing are on the roadmap.</p></article></div></div></section><section class="section" id="accessibility"><div class="container panel"><p class="eyebrow">Accessibility by design</p><h2>Inclusive learning starts with the authoring experience.</h2><p>We're designing CourseLab around WCAG 2.2 AA and accessible authoring practices: keyboard operation, clear structure, readable contrast, and prompts for alternative text. Accessibility checks and manual testing will grow with the product.</p><p class="small">This prototype has not been independently audited or certified as WCAG conformant.</p></div></section><section class="section" id="pricing"><div class="container"><p class="eyebrow">Free trial</p><h2>Current access: Free trial</h2><p>CourseLab is currently available as a free trial. Sign in to build courses or join a course as a learner.</p><a class="button" href="login.html?next=dashboard.html">Start free trial</a></div></section></main><footer class="footer"><div class="container">© CourseLab · Early development preview</div></footer></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="CourseLab is your home for online learning. Sign in to access your courses, complete lessons, and track your progress.">
+  <title>CourseLab | Your learning starts here</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Homepage-only layout; existing CourseLab styles and authentication stay unchanged. */
+    .student-home{min-height:calc(100svh - 83px);display:flex;flex-direction:column}
+    .student-header .nav a{font-size:.93rem}
+    .student-header .nav .instructor-link{color:var(--muted);font-weight:650;text-decoration:none;border:1px solid var(--line);border-radius:9px;padding:.58rem .85rem}
+    .student-header .nav .instructor-link:hover{text-decoration:underline;background:var(--bg)}
+    .student-hero{width:min(1120px,calc(100% - 2rem));margin:auto;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(290px,.95fr);gap:clamp(2rem,6vw,5rem);align-items:center;padding:clamp(3rem,9vh,7rem) 0 4rem}
+    .student-hero h1{font-size:clamp(2.75rem,5.4vw,5.2rem);line-height:1.08;max-width:11ch;margin:.65rem 0 1.2rem}
+    .student-hero .lead{font-size:clamp(1.08rem,1.6vw,1.28rem);max-width:46ch;line-height:1.65}
+    .student-hero .actions{margin:2rem 0 1rem;align-items:center}
+    .student-hero .actions .button{padding:.92rem 1.45rem;font-size:1.04rem;min-width:160px}
+    .student-hero .small{margin-top:1.1rem}
+    .learning-showcase{border:1px solid #c8dfe0;background:linear-gradient(145deg,#e5f5f2,#f8fbfc 70%);padding:clamp(1.15rem,3vw,2rem);border-radius:24px}
+    .learning-card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:1.6rem;box-shadow:0 18px 45px #14283e10}
+    .learning-card .card-top{display:flex;justify-content:space-between;gap:.5rem;align-items:center}
+    .learning-card .pill{display:inline-block;border-radius:100px;background:#e6f5f1;color:#08766e;font-size:.75rem;font-weight:750;padding:.32rem .65rem}
+    .learning-card h2{font-size:1.5rem;margin:1.1rem 0 .45rem}
+    .learning-card .course-sub{font-size:.94rem;color:var(--muted);margin:0 0 1.35rem}
+    .learning-card .progress-track{height:10px;background:#e9eff2;border-radius:30px;overflow:hidden;margin:.65rem 0 .4rem}
+    .learning-card .progress-fill{height:100%;width:60%;background:var(--teal);border-radius:30px}
+    .learning-card .lesson-list{list-style:none;padding:0;margin:1.5rem 0 0;display:grid;gap:.8rem}
+    .learning-card .lesson-list li{display:flex;align-items:center;gap:.75rem;font-size:.94rem;color:var(--navy)}
+    .learning-card .lesson-dot{flex:none;width:25px;height:25px;border-radius:50%;border:1px solid #b8c9d3;display:grid;place-items:center;font-size:.78rem;color:var(--muted)}
+    .learning-card .lesson-dot.done{background:#e6f5f1;color:#08766e;border-color:#a8dcd2;font-weight:750}
+    .learning-card .lesson-dot.now{border:2px solid var(--teal);color:var(--teal);font-weight:750}
+    .student-benefits{width:min(1120px,calc(100% - 2rem));margin:0 auto 4rem;border-top:1px solid var(--line);padding-top:2rem;display:grid;grid-template-columns:repeat(3,1fr);gap:2rem}
+    .student-benefits h3{font-size:1.08rem;margin:0 0 .4rem}
+    .student-benefits p{margin:0;color:var(--muted);font-size:.94rem}
+    .student-home .footer{margin-top:auto}
+    @media(max-width:800px){.student-hero{grid-template-columns:1fr;padding-top:3rem}.student-hero h1{max-width:15ch}.learning-showcase{max-width:580px;width:100%}.student-benefits{gap:1rem}}
+    @media(max-width:600px){.student-header.site-header{flex-direction:row;align-items:center}.student-header .brand{font-size:1.25rem}.student-benefits{grid-template-columns:1fr;gap:1.4rem}.student-hero .actions{display:grid;grid-template-columns:1fr}.student-hero .actions .button{width:100%}}
+  </style>
+</head>
+<body>
+  <a class="sr-only" href="#main">Skip to content</a>
+  <div class="student-home">
+    <header class="site-header student-header">
+      <a class="brand" href="index.html" aria-label="CourseLab home">Course<span>Lab</span></a>
+      <nav class="nav" aria-label="Account navigation">
+        <a class="instructor-link" href="login.html?next=dashboard.html">Instructor sign in</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="student-hero" aria-labelledby="welcome-heading">
+        <div>
+          <p class="eyebrow">Welcome to CourseLab</p>
+          <h1 id="welcome-heading">Your learning starts here.</h1>
+          <p class="lead">Pick up where you left off, explore your lessons, and track your progress—all in one place.</p>
+          <div class="actions">
+            <a class="button" href="login.html?next=learn.html">Student sign in</a>
+            <a class="button secondary" href="login.html?next=learn.html">Create an account</a>
+          </div>
+          <p class="small">Have a course enrollment code? Sign in or create an account to join your course.</p>
+        </div>
+        <div class="learning-showcase" aria-label="Illustration of a learner's course progress">
+          <div class="learning-card">
+            <div class="card-top"><span class="eyebrow" style="margin:0">My learning</span><span class="pill">In progress</span></div>
+            <h2>Keep making progress</h2>
+            <p class="course-sub">Your lessons, all in one place</p>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;font-size:.88rem"><strong>Course progress</strong><span style="color:var(--muted)">60%</span></div>
+            <div class="progress-track" role="img" aria-label="Example course progress: 60 percent"><div class="progress-fill"></div></div>
+            <ul class="lesson-list">
+              <li><span class="lesson-dot done" aria-hidden="true">✓</span>Introduction</li>
+              <li><span class="lesson-dot done" aria-hidden="true">✓</span>Foundations</li>
+              <li><span class="lesson-dot now" aria-hidden="true">3</span><strong>Continue your lessons</strong></li>
+              <li><span class="lesson-dot" aria-hidden="true">4</span>Apply what you've learned</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+      <section class="student-benefits" aria-label="Learning with CourseLab">
+        <div><h3>Learn at your pace</h3><p>Return to your course whenever you're ready to continue.</p></div>
+        <div><h3>Stay on track</h3><p>See your lessons and keep track of what you've completed.</p></div>
+        <div><h3>Join with a course code</h3><p>Access courses shared with you by your instructor.</p></div>
+      </section>
+    </main>
+    <footer class="footer"><div class="container">© CourseLab · A place to learn and grow</div></footer>
+  </div>
+</body>
+</html>
