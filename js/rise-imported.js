@@ -96,3 +96,6 @@ const CourseLabRise = (()=>{
  }
  return {render};
 })();
+
+// Expose the imported lesson renderer to the learner and preview pages.
+if (typeof window !== "undefined") window.CourseLabRise = CourseLabRise;
