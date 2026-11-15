@@ -9,7 +9,7 @@ const CourseLabCloud = (() => {
   async function loadCourse(id){
     const {data:course,error}=await db.from('courses').select('id,title,description,settings').eq('id',id).single();if(error)throw error;
     const {data:rows,error:le}=await db.from('lessons').select('id,title,position,content').eq('course_id',id).order('position');if(le)throw le;
-    return {...course,lessons:rows.map(r=>({id:r.id,title:r.title,sections:r.content?.sections||[],lessonType:r.content?.lessonType||'standard',assessmentSettings:r.content?.assessmentSettings||{},completionSettings:r.content?.completionSettings||{},position:r.position}))};
+    return {...course,lessons:rows.map(r=>({id:r.id,title:r.title,sections:r.content?.sections||[],riseBlocks:r.content?.riseBlocks||[],lessonType:r.content?.lessonType||'standard',assessmentSettings:r.content?.assessmentSettings||{},completionSettings:r.content?.completionSettings||{},position:r.position}))};
   }
   async function createLesson(courseId,title='Welcome',position=0,sections,lessonType='standard'){
     const content={lessonType,assessmentSettings:{showScore:false,showAnswers:false,includeInGrade:false,includeInAnalytics:true},completionSettings:{heading:"Congratulations!",message:"You have completed this course.",showGrades:false},sections:sections||[{id:CourseLab.id(),cols:1,blocks:[{id:CourseLab.id(),type:'text',text:'Welcome to your new lesson.'}]}]};

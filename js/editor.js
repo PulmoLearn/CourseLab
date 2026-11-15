@@ -57,7 +57,7 @@ let course,lesson,selected=null,selectedRow=null;const editorCardState=new Map()
 let pending=Promise.resolve(),saveTimer=null,saveError=false;
 function queueSave(snapshot){
   pending=pending.catch(()=>{}).then(async()=>{
-    const {error}=await CourseLabCloud.db.from('lessons').update({title:snapshot.title,content:{sections:snapshot.sections,lessonType:snapshot.lessonType||"standard",assessmentSettings:snapshot.assessmentSettings||{},completionSettings:snapshot.completionSettings||{}}}).eq('id',snapshot.id);
+    const {error}=await CourseLabCloud.db.from('lessons').update({title:snapshot.title,content:{sections:snapshot.sections,riseBlocks:snapshot.riseBlocks||[],lessonType:snapshot.lessonType||"standard",assessmentSettings:snapshot.assessmentSettings||{},completionSettings:snapshot.completionSettings||{}}}).eq('id',snapshot.id);
     if(error)throw error;
     await CourseLabMedia.syncLesson(courseId,snapshot);
     $('#status').textContent='Saved to cloud.';saveError=false;
