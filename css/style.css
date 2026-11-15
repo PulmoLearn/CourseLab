@@ -147,3 +147,10 @@
 .rise-edit-rich h1,.rise-rich h1,.editable-text h1,.preview-block h1{font-size:2rem;line-height:1.2;font-weight:700;margin:.8em 0 .35em}
 .rise-edit-rich h2,.rise-rich h2,.editable-text h2,.preview-block h2{font-size:1.5rem;line-height:1.3;font-weight:700;margin:.7em 0 .35em}
 .rise-edit-rich p,.rise-rich p,.editable-text p,.preview-block p{line-height:1.5}
+
+/* Imported lesson text editing: match learner paragraph/list spacing and preserve author sizes. */
+.rise-edit-rich,.rise-import-block .rise-rich{font-size:inherit;line-height:1.5}
+.rise-edit-rich li,.rise-import-block .rise-rich li{margin:.2rem 0}
+.rise-edit-rich li p,.rise-import-block .rise-rich li p{margin:0}
+.rise-edit-rich ul,.rise-edit-rich ol,.rise-import-block .rise-rich ul,.rise-import-block .rise-rich ol{padding-left:1.5rem}
+.rise-edit-field > button{justify-self:start}
