@@ -29,5 +29,32 @@ if(lesson.lessonType==='completion'){
   const next=document.createElement('button');next.type='button';next.className='button';next.textContent='Continue to next lesson →';next.hidden=true;next.disabled=true;
   next.onclick=()=>{if(next.disabled||next.hidden)return;if(index<lessons.length-1){showLesson(index+1);root.scrollIntoView({behavior:'smooth',block:'start'});}else{next.disabled=true;next.textContent='Course preview complete ✓';note.textContent='Preview finished. Learner completion is saved only in the published course.'}};
   content.after(next,note);
-  CourseLabActivities.renderLesson(lesson,content,state=>{next.hidden=!state.ready;next.disabled=!state.ready;note.textContent=state.ready?'All required blocks complete.':'Complete the required activities to continue.'});
+  // Query the selected DRAFT lesson directly. The editor and published learner do not
+  // use the same object shape; avoiding the flattened loadCourse model here prevents
+  // inadvertently passing an empty content object to the imported renderer.
+  const {data:raw,error:readError}=await CourseLabCloud.db.from('lessons')
+    .select('id,title,content').eq('id',lesson.id).eq('course_id',course.id).single();
+  if(readError)throw new Error('Cannot load draft lesson content: '+readError.message);
+  const stored=raw?.content||{};
+  const riseBlocks=Array.isArray(stored.riseBlocks)?stored.riseBlocks:[];
+  const sections=Array.isArray(stored.sections)?stored.sections:[];
+  const imported=stored.lessonType==='rise-import'||riseBlocks.length>0;
+  if(imported&&riseBlocks.length===0){
+    content.replaceChildren();
+    const error=document.createElement('p');error.setAttribute('role','alert');
+    error.textContent='This imported lesson has no Rise blocks saved in its draft. Preview cannot display the lesson. Check the editor save status; do not reimport or publish until the content is restored.';
+    content.append(error);next.hidden=true;note.textContent='';return;
+  }
+  if(!imported&&sections.length===0){
+    content.replaceChildren();
+    const warning=document.createElement('p');warning.setAttribute('role','alert');
+    warning.textContent='This draft lesson has no content sections. If the editor still shows imported content, please verify its save status and reload.';
+    content.append(warning);next.hidden=true;note.textContent='';return;
+  }
+  const previewLesson={...lesson,id:raw.id,title:raw.title,
+    lessonType:stored.lessonType,sections,brandKit:course.settings?.brandKit,
+    content:{...stored,riseBlocks,sections}};
+  const renderer=imported?CourseLabRise.render:CourseLabActivities.renderLesson;
+  if(typeof renderer!=='function')throw new Error('The '+(imported?'imported Rise':'standard')+' lesson renderer did not load. Refresh the page.');
+  renderer(previewLesson,content,state=>{next.hidden=!state.ready;next.disabled=!state.ready;note.textContent=state.ready?'All required blocks complete.':'Complete the required activities to continue.'});
 }};await showLesson(firstIndex);}catch(err){root.textContent='Unable to load preview: '+err.message}})();
