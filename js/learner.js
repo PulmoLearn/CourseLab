@@ -1,7 +1,7 @@
 (async()=>{
  const db=CourseLabCloud.db, params=new URLSearchParams(location.search), test=params.get('test')==='1', courseId=params.get('course');
  const $=id=>document.getElementById(id), status=m=>$('learner-status').textContent=m;
- let user,course,version,lessons=[],index=0,completed=new Set(),currentActivity=null;
+ let user,course,version,lessons=[],index=0,completed=new Set(),currentActivity=null,renderToken=0;
  const escape=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const progressTable=test?'instructor_test_progress':'learner_lesson_progress';
  try{
@@ -29,11 +29,24 @@
   index=Math.max(0,lessons.findIndex(l=>!completed.has(l.id)));const requested=params.get('lesson');if(requested){const requestedIndex=lessons.findIndex(l=>l.id===requested);if(requestedIndex>=0)index=requestedIndex;}renderLesson();
  }
  function renderNav(){const nav=$('lesson-nav');nav.replaceChildren();lessons.forEach((l,i)=>{const b=document.createElement('button');b.type='button';b.className='cl-lesson-item'+(i===index?' is-active':'');b.textContent=`${completed.has(l.id)?'✓':String(i+1).padStart(2,'0')}  ${l.title}`;b.setAttribute('aria-current',i===index?'step':'false');b.onclick=()=>{if(i>index&&!completed.has(lessons[index].id)&&currentActivity&&!currentActivity.isReady()){ $('lesson-status').textContent='Complete this lesson before moving forward.';return;}index=i;renderLesson()};nav.append(b)});$('course-progress').textContent=`${completed.size} of ${lessons.length} lessons completed`}
- function renderLesson(){const l=lessons[index];renderNav();$('lesson-title').textContent=l.title;$('lesson-status').textContent=completed.has(l.id)?'Previously completed.':'In progress';$('previous-lesson').disabled=index===0;$('mark-complete').disabled=true;$('mark-complete').hidden=true;$('mark-complete').textContent=index===lessons.length-1?'Complete course ✓':'Continue to next lesson →';const model={...l,sections:l.content?.sections||[],brandKit:course.settings?.brandKit};
+ async function renderLesson(){const token=++renderToken;const l=lessons[index];renderNav();$('lesson-title').textContent=l.title;$('lesson-status').textContent=completed.has(l.id)?'Previously completed.':'In progress';$('previous-lesson').disabled=index===0;$('mark-complete').disabled=true;$('mark-complete').hidden=true;$('mark-complete').textContent=index===lessons.length-1?'Complete course ✓':'Continue to next lesson →';const model={...l,sections:l.content?.sections||[],brandKit:course.settings?.brandKit};
  if(l.content?.lessonType==='completion'){
   const settings=l.content.completionSettings||{};const wrap=document.createElement('section');wrap.className='cl-completion-card';const title=document.createElement('h2');title.textContent=settings.heading||'Congratulations!';const message=document.createElement('p');message.textContent=settings.message||'You have completed this course.';wrap.append(title,message);$('lesson-content').replaceChildren(wrap);
   currentActivity={isReady:()=>true};$('mark-complete').hidden=false;$('mark-complete').disabled=false;
- }else{currentActivity=(l.content?.lessonType==='rise-import'?CourseLabRise.render:CourseLabActivities.renderLesson)(model,$('lesson-content'),state=>{const canProceed=completed.has(l.id)||state.ready;$('mark-complete').hidden=!canProceed;$('mark-complete').disabled=!canProceed;$('lesson-status').textContent=canProceed?'Ready to continue.':`Finish revealing and completing the lesson blocks to continue (${state.completed}/${state.total} activities).`;});}
+ }else{
+  let savedResearch=[];
+  if(!test && l.content?.riseBlocks?.some(b=>['survey','quiz'].includes(b.type))){
+    const {data,error}=await db.rpc('courselab_my_research',{p_course:id,p_version:v.id,p_lesson:l.id});
+    if(token!==renderToken)return;
+    if(error){$('lesson-status').textContent='Research responses could not be loaded: '+error.message;return;}
+    savedResearch=data||[];
+  }
+  const research={saved:savedResearch,save:async(blockIndex,answers)=>{
+    if(test)return {saved:true,preview:true};
+    const {data,error}=await db.rpc('courselab_submit_research',{p_course:id,p_version:v.id,p_lesson:l.id,p_block:blockIndex,p_answers:answers});
+    if(error)throw error;return data;
+  }};
+  currentActivity=(l.content?.lessonType==='rise-import'?CourseLabRise.render:CourseLabActivities.renderLesson)(model,$('lesson-content'),state=>{const canProceed=completed.has(l.id)||state.ready;$('mark-complete').hidden=!canProceed;$('mark-complete').disabled=!canProceed;$('lesson-status').textContent=canProceed?'Ready to continue.':`Finish revealing and completing the lesson blocks to continue (${state.completed}/${state.total} activities).`;},research);}
  if(completed.has(l.id)){$('mark-complete').hidden=false;$('mark-complete').disabled=false;}
  
  }

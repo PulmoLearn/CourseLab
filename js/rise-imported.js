@@ -11,7 +11,7 @@ const CourseLabRise = (()=>{
  function imagePath(file){return BASE+'assets/'+encodeURIComponent(file)}
  function embedUrl(value){try{const u=new URL(value);let id='';if(['youtube.com','www.youtube.com','m.youtube.com','youtube-nocookie.com','www.youtube-nocookie.com'].includes(u.hostname)){id=u.searchParams.get('v')||u.pathname.split('/').filter(Boolean).at(-1)}else if(u.hostname==='youtu.be')id=u.pathname.slice(1);if(/^[\w-]{11}$/.test(id))return 'https://www.youtube-nocookie.com/embed/'+id}catch{}return null}
  async function getVideoMap(){if(!videoMapPromise)videoMapPromise=fetch(BASE+'video-urls.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Video map missing');return r.json()}).catch(()=>({}));return videoMapPromise}
- function render(lesson,container,onChange){container.replaceChildren();const blocks=lesson.content?.riseBlocks||[];const required=[];const completed=new Set();let live=true;
+ function render(lesson,container,onChange,research={}){container.replaceChildren();const blocks=lesson.content?.riseBlocks||[];const required=[];const completed=new Set();let live=true;
   const inform=()=>{if(live&&typeof onChange==='function')onChange({ready:required.every(k=>completed.has(k)),completed:completed.size,total:required.length})};
   const requirement=(key)=>{required.push(key);return ()=>{completed.add(key);inform()}};
   blocks.forEach((b,bi)=>{const wrapper=e('section','rise-import-block');container.append(wrapper);
@@ -41,16 +41,56 @@ const CourseLabRise = (()=>{
       getVideoMap().then(map=>{if(!live)return;const url=embedUrl(media.youtubeUrl||map[media.file]);if(url){const frame=e('iframe');frame.src=url;frame.title='Educational philosophy instructional video';frame.setAttribute('allow','fullscreen; picture-in-picture; encrypted-media');frame.setAttribute('allowfullscreen','');frame.loading='lazy';area.append(frame)}else{const placeholder=e('div','rise-video-placeholder');if(media.poster){const img=e('img');img.src=imagePath(media.poster);img.alt='Video preview image';placeholder.append(img)}placeholder.append(e('p','','Video awaiting instructor’s unlisted YouTube link.'));area.append(placeholder)}if(media.transcript){const details=e('details');details.append(e('summary','','Read video transcript'),e('p','rise-transcript',media.transcript));area.append(details)}});
     }else if(media.type==='image'){const key=media.media?.key||media.media?.src; if(key&&/\.(jpg|png|webp)$/i.test(key)){const img=e('img');img.src=imagePath(key);img.alt=media.media?.alt||'';wrapper.append(img)}}}
    }else if(b.type==='survey'){
-    wrapper.append(e('h3','','Reflection / survey'));(b.items||[]).forEach((q,qi)=>{const key='survey-'+bi+'-'+qi,mark=requirement(key),field=e('fieldset','rise-question'),legend=e('legend');legend.append(rich(q.question));field.append(legend);const type=q.questionType;
-     if(type==='LINEAR_SCALE'){const row=e('div','rise-scale');row.append(e('span','',q.startLabel||''));for(let i=1;i<=Math.min(10,q.scaleMax||5);i++){const lbl=e('label');const inp=e('input');inp.type='radio';inp.name=key;inp.value=String(i);inp.onchange=mark;lbl.append(inp,document.createTextNode(' '+i));row.append(lbl)}row.append(e('span','',q.endLabel||''));field.append(row)}
-     else if(type==='LONG_RESPONSE'||type==='SHORT_RESPONSE'){const input=e('textarea');input.rows=type==='LONG_RESPONSE'?5:2;input.maxLength=q.maxLength||10000;input.placeholder='Type your response';input.oninput=()=>{if(input.value.trim())mark();else {completed.delete(key);inform()}};field.append(input)}
-     else if(type==='MULTIPLE_CHOICE'){for(const option of q.choices||[]){const label=e('label','rise-option');const input=e('input');input.type='radio';input.name=key;input.onchange=mark;label.append(input,document.createTextNode(' '+(option.title||'')));field.append(label)}}else{completed.add(key);field.append(e('p','','Unsupported survey question type: '+type))}wrapper.append(field)});
-    wrapper.append(e('p','small','Survey and reflection responses are not stored or sent to the instructor in this version. Lesson completion is recorded.'));
+    wrapper.append(e('h3','','Reflection / survey'));
+    const saved=(research.saved||[]).find(x=>x.block_index===bi),fields=[];
+    (b.items||[]).forEach((q,qi)=>{
+     const key='survey-'+bi+'-'+qi,field=e('fieldset','rise-question'),legend=e('legend');legend.append(rich(q.question));field.append(legend);
+     const type=q.questionType,choices=[];
+     if(type==='LINEAR_SCALE'){
+      const row=e('div','rise-scale');row.append(e('span','',q.startLabel||''));
+      for(let i=1;i<=Math.min(10,q.scaleMax||5);i++){const lbl=e('label'),inp=e('input');inp.type='radio';inp.name=key;inp.value=String(i);lbl.append(inp,document.createTextNode(' '+i));row.append(lbl);choices.push(inp)}
+      row.append(e('span','',q.endLabel||''));field.append(row);
+     }else if(type==='LONG_RESPONSE'||type==='SHORT_RESPONSE'){
+      const input=e('textarea');input.rows=type==='LONG_RESPONSE'?5:2;input.maxLength=q.maxLength||10000;
+      input.placeholder='Type your response (avoid names or identifying details)';choices.push(input);field.append(input);
+     }else if(type==='MULTIPLE_CHOICE'){
+      for(const option of q.choices||[]){const label=e('label','rise-option'),input=e('input');input.type='radio';input.name=key;input.value=option.title||'';label.append(input,document.createTextNode(' '+(option.title||'')));field.append(label);choices.push(input)}
+     }else{field.append(e('p','','Unsupported survey type: '+type))}
+     fields.push({type,choices});wrapper.append(field);
+    });
+    const key='survey-'+bi,mark=requirement(key),msg=e('p','small'),button=e('button','secondary','Submit responses');button.type='button';
+    const getAnswers=()=>fields.map(({type,choices})=>type==='LONG_RESPONSE'||type==='SHORT_RESPONSE'?(choices[0]?.value||'').trim():type==='LINEAR_SCALE'?Number(choices.find(x=>x.checked)?.value||0):(choices.find(x=>x.checked)?.value||''));
+    if(saved){(saved.answers||[]).forEach((a,i)=>{const f=fields[i];if(!f)return;if(['LONG_RESPONSE','SHORT_RESPONSE'].includes(f.type)){if(f.choices[0])f.choices[0].value=a;}else f.choices.forEach(x=>{x.checked=x.value===String(a)})});fields.flatMap(x=>x.choices).forEach(x=>x.disabled=true);mark();msg.textContent='Responses saved for research. This submission is locked.';}
+    button.hidden=!!saved;button.onclick=async()=>{
+     const answers=getAnswers();if(answers.some(x=>x===0||x==='')){msg.textContent='Please respond to every question before submitting.';return}
+     button.disabled=true;msg.textContent='Saving research responses…';
+     try{const result=research.save?await research.save(bi,answers):{preview:true};
+      fields.flatMap(x=>x.choices).forEach(x=>x.disabled=true);button.hidden=true;msg.textContent=result.preview?'Preview only — responses are not recorded.':'Responses saved under your confidential study participant ID.';mark();
+     }catch(err){button.disabled=false;msg.textContent='Could not save. Your responses remain here; please retry. '+err.message}
+    };wrapper.append(button,msg);
    }else if(b.type==='sorting'){
     wrapper.append(e('h3','','Sorting activity'));const pileTitles=new Map((b.piles||[]).map(p=>[String(p.id),p.title]));const selects=[];for(const [i,item] of (b.items||[]).entries()){const row=e('label','rise-sort-row');row.append(e('span','',item.title));const select=e('select');select.append(new Option('Select a category',''));for(const [id,title] of pileTitles)select.append(new Option(title,id));selects.push(select);row.append(select);wrapper.append(row)}const msg=e('p','','');const check=e('button','secondary','Check my answers');check.type='button';const mark=requirement('sort-'+bi);check.onclick=()=>{const all=selects.every(s=>s.value);if(!all){msg.textContent='Choose a category for every statement.';return}const count=selects.filter((s,i)=>s.value===String(b.items[i].pileId)).length;msg.textContent=`${count} of ${selects.length} correctly sorted.`;if(count===selects.length){mark();check.disabled=true}};wrapper.append(check,msg)
    }else if(b.type==='quiz'){
-    wrapper.append(e('h3','','Educational Philosophies Assessment'));const questions=b.questions||[];const selections=[];questions.forEach((q,qi)=>{const field=e('fieldset','rise-question'),legend=e('legend');legend.append(rich(q.title));field.append(legend);const opts=[];for(const answer of q.answers||[]){const label=e('label','rise-option');const input=e('input');input.type=q.type==='MULTIPLE_RESPONSE'?'checkbox':'radio';input.name='quiz-'+qi;input.value=answer.id;label.append(input,rich(answer.title));field.append(label);opts.push(input)}selections.push({q,opts});wrapper.append(field)});
-    const msg=e('p','',''),check=e('button','secondary','Check assessment');check.type='button';const mark=requirement('quiz-'+bi);check.onclick=()=>{if(selections.some(({opts})=>!opts.some(x=>x.checked))){msg.textContent='Answer every question before submitting.';return}let correct=0;for(const {q,opts} of selections){const chosen=opts.filter(x=>x.checked).map(x=>x.value);const expected=q.type==='MULTIPLE_RESPONSE'?(q.corrects||[]):[q.correct];if(chosen.length===expected.length&&chosen.every(x=>expected.includes(x)))correct++}msg.textContent=`Your practice result: ${correct} of ${questions.length} (${Math.round(100*correct/questions.length)}%). This score is not saved to the gradebook.`;mark();check.disabled=true};wrapper.append(check,msg)
+    wrapper.append(e('h3','','Educational Philosophies Assessment'));
+    const saved=(research.saved||[]).find(x=>x.block_index===bi),questions=b.questions||[],selections=[];
+    questions.forEach((q,qi)=>{const field=e('fieldset','rise-question'),legend=e('legend');legend.append(rich(q.title));field.append(legend);const opts=[];
+     for(const answer of q.answers||[]){const label=e('label','rise-option'),input=e('input');input.type=q.type==='MULTIPLE_RESPONSE'?'checkbox':'radio';input.name='quiz-'+bi+'-'+qi;input.value=answer.id;label.append(input,rich(answer.title));field.append(label);opts.push(input)}
+     selections.push({q,opts});wrapper.append(field)});
+    const msg=e('p','',''),check=e('button','secondary','Submit assessment');check.type='button',mark=requirement('quiz-'+bi);
+    if(saved){selections.forEach(({opts},i)=>opts.forEach(x=>{x.checked=(saved.answers?.[i]||[]).includes(x.value);x.disabled=true}));
+     msg.textContent=`Assessment submitted: ${saved.score} of ${saved.max_score} (${Math.round(100*saved.score/Math.max(1,saved.max_score))}%).`;mark()}
+    check.hidden=!!saved;
+    check.onclick=async()=>{
+     const answers=selections.map(({opts})=>opts.filter(x=>x.checked).map(x=>x.value));
+     if(answers.some(x=>!x.length)){msg.textContent='Answer every question before submitting.';return}
+     check.disabled=true;msg.textContent='Saving assessment…';
+     try{const result=research.save?await research.save(bi,answers):null;
+      let correct=0;for(const {q,opts} of selections){const chosen=opts.filter(x=>x.checked).map(x=>x.value),expected=q.type==='MULTIPLE_RESPONSE'?(q.corrects||[]):[q.correct];if(chosen.length===expected.length&&chosen.every(x=>expected.includes(x)))correct++}
+      const score=result&&!result.preview?result.score:correct,max=result&&!result.preview?result.max_score:questions.length;
+      msg.textContent=`${result?.preview||!research.save?'Preview only · ':''}Assessment result: ${score} of ${max} (${Math.round(100*score/Math.max(1,max))}%).`;
+      selections.flatMap(x=>x.opts).forEach(x=>x.disabled=true);mark();check.hidden=true;
+     }catch(err){check.disabled=false;msg.textContent='Save failed; please retry. '+err.message}
+    };wrapper.append(check,msg)
    }else if(b.type==='links'){for(const x of b.items||[]){const href=x.url||x.link||x.href;if(typeof href==='string'&&/^https:\/\//i.test(href)){const a=e('a','button secondary',x.title||'Open resource');a.href=href;a.target='_blank';a.rel='noopener noreferrer';wrapper.append(a)}}}
   });inform();return {isReady:()=>required.every(k=>completed.has(k)),dispose:()=>{live=false}};
  }
