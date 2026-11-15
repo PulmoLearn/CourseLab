@@ -102,3 +102,23 @@
 .cl-lesson-sort-handle:active{cursor:grabbing}
 .cl-lesson-sort-item.cl-lesson-drop-target{outline:2px dashed #087f78;outline-offset:2px}
 .cl-lesson-sort-item.is-dragging{opacity:.5}
+/* Converted instructor-owned Rise lessons. Scoped to avoid altering CourseLab builder. */
+.rise-import-block{margin:0 0 1.5rem;padding:1rem 1.25rem;background:#fff;border:1px solid #e3e9ef;border-radius:12px;line-height:1.65}
+.rise-import-block .rise-rich p{margin:.35rem 0 1rem}
+.rise-import-block .rise-rich a{word-break:break-word}
+.rise-import-block .rise-video-area iframe{display:block;width:100%;aspect-ratio:16/9;border:0;border-radius:10px}
+.rise-video-placeholder{background:#edf2f6;border:1px solid #b8c7d2;border-radius:10px;padding:1rem;text-align:center}
+.rise-video-placeholder img{display:block;width:100%;max-height:400px;object-fit:contain;margin-bottom:.75rem}
+.rise-transcript{white-space:pre-wrap;line-height:1.5}
+.rise-question{border:1px solid #d6e0e7;border-radius:10px;padding:1rem;margin:1rem 0}
+.rise-question legend{font-weight:600;padding:0 .3rem;max-width:100%}
+.rise-option{display:flex;align-items:flex-start;gap:.55rem;margin:.6rem 0;padding:.4rem;cursor:pointer}
+.rise-option input{flex-shrink:0;margin-top:.38rem}
+.rise-option .rise-rich p{margin:0}
+.rise-scale{display:flex;flex-wrap:wrap;align-items:center;gap:1rem}
+.rise-scale label{white-space:nowrap}
+.rise-question textarea{display:block;width:100%;min-height:100px}
+.rise-sort-row{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem;padding:.7rem 0;border-bottom:1px solid #edf0f3}
+.rise-sort-row select{max-width:100%;min-width:180px}
+.rise-import-block details{margin-top:1rem}
+@media(max-width:650px){.rise-import-block{padding:.75rem}.rise-sort-row select{width:100%}}
