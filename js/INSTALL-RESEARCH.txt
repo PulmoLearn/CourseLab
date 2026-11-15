@@ -1,0 +1,12 @@
+CourseLab research reporting update
+
+1. BACK UP your Supabase database and repository.
+2. In Supabase SQL Editor, run MIGRATION-RESEARCH-01.sql once. Do this FIRST.
+3. Extract the repository-relative files into CourseLab GitHub, commit and deploy Vercel.
+4. Enroll a new test LEARNER account (not Test Student mode) and submit pre survey, quiz, post survey, reflection, and course feedback. Verify research.html?course=YOUR_COURSE_ID.
+5. IMPORTANT: response submission is first-attempt locked. Use disposable test accounts for verification. There is NO researcher deletion UI yet.
+6. Instructor dashboard -> Research results (or Gradebook -> Research dashboard).
+7. This is PSEUDONYMOUS / de-identified to the instructor, NOT anonymous in the strict sense. Supabase auth still has a private learner-to-code link. Written answers can reveal identity. Obtain appropriate consent / ethics approval before research; set retention, deletion, disclosure rules.
+8. Keep the same published course version throughout pre/post data collection; dashboard currently shows current-version records only. Republish can make prior records disappear from the dashboard, though they remain in database.
+9. The original course question wording and score key are preserved; no automated question edits or artificial values.
+10. This update has syntax validation but has NOT been end-to-end tested on the live Supabase/Vercel deployment.
