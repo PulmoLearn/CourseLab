@@ -32,29 +32,37 @@ function selectedTextRange(editable){const sel=window.getSelection();if(!sel||!s
 // the highlighted letters, so assistive technologies can navigate by heading.
 function styleSelectedParagraph(editable,tag,range){
  if(!editable||!['H1','H2','P'].includes(tag))return false;
- const sel=window.getSelection();
- const saved=range||selectedTextRange(editable);
+ const sel=window.getSelection(),saved=range||rememberTextSelection(editable);
  let node=saved?.startContainer||sel?.anchorNode;
  if(!node||!editable.contains(node))return false;
  if(node.nodeType===3)node=node.parentElement;
- const candidate=node?.closest?.('h1,h2,h3,h4,p,div,li');
- let block=candidate&&candidate!==editable&&editable.contains(candidate)?candidate:null;
- if(!block){
-   // Bare imported text is wrapped in a semantic element rather than merely resized.
-   block=document.createElement(tag.toLowerCase());
-   while(editable.firstChild)block.append(editable.firstChild);
-   editable.append(block);
- }else if(block.tagName!==tag){
-   const replacement=document.createElement(tag.toLowerCase());
-   while(block.firstChild)replacement.append(block.firstChild);
-   block.replaceWith(replacement);
-   block=replacement;
+ // Never replace an LI, UL, or OL with an H2: that produces empty bullets.
+ const block=node?.closest?.('h1,h2,h3,h4,p');
+ let target=block&&editable.contains(block)?block:null;
+ if(!target){
+   const li=node?.closest?.('li');
+   if(li&&editable.contains(li)){
+     target=document.createElement('p');
+     while(li.firstChild)target.append(li.firstChild);
+     li.append(target);
+   }else{
+     const div=node?.closest?.('div');
+     if(div&&div!==editable&&editable.contains(div)&&!div.querySelector('p,h1,h2,h3,h4,ul,ol,li'))target=div;
+     else {
+       // Do not wrap the entire imported field: it may contain multiple paragraphs and lists.
+       return false;
+     }
+   }
  }
- const focusRange=document.createRange();focusRange.selectNodeContents(block);focusRange.collapse(false);
- sel?.removeAllRanges();sel?.addRange(focusRange);
+ if(target.tagName!==tag){
+   const next=document.createElement(tag.toLowerCase());
+   while(target.firstChild)next.append(target.firstChild);
+   target.replaceWith(next);target=next;
+ }
+ const focusRange=document.createRange();focusRange.selectNodeContents(target);focusRange.collapse(false);
+ editable.focus();sel?.removeAllRanges();sel?.addRange(focusRange);
  return true;
 }
-// Retain a selection when clicking a toolbar control (which otherwise steals focus).
 function rememberTextSelection(editable){
  const sel=window.getSelection();if(!sel?.rangeCount)return null;
  const r=sel.getRangeAt(0);
@@ -65,27 +73,56 @@ function wrapSelectedText(editable,tag,style,value,range){
  if(!r||r.collapsed||!editable.contains(r.commonAncestorContainer))return false;
  const wrapper=document.createElement(tag);
  if(style)wrapper.style[style]=value;
- try{const content=r.extractContents();wrapper.append(content);r.insertNode(wrapper);sel.removeAllRanges();const next=document.createRange();next.selectNodeContents(wrapper);sel.addRange(next);return true}catch{return false}
+ try{const content=r.extractContents();wrapper.append(content);r.insertNode(wrapper);editable.normalize();
+   const next=document.createRange();next.selectNodeContents(wrapper);sel.removeAllRanges();sel.addRange(next);return true
+ }catch{return false}
+}
+// Repair blank list markers from older editor versions without removing valid list content.
+function removeEmptyRiseBullets(html){
+ const template=document.createElement('template');template.innerHTML=String(html||'');
+ for(const li of [...template.content.querySelectorAll('li')].reverse()){
+   if(li.querySelector('img,video,iframe,input,button,ul,ol'))continue;
+   const content=(li.textContent||'').replace(/\u00a0/g,'').trim();
+   if(!content)li.remove();
+ }
+ for(const list of [...template.content.querySelectorAll('ul,ol')])if(!list.querySelector('li'))list.remove();
+ return template.innerHTML;
 }
 function makeTextStyleToolbar(editable,save,options={}){
  const bar=document.createElement('div');bar.className='cl-semantic-toolbar';bar.setAttribute('role','toolbar');bar.setAttribute('aria-label','Text styles');
  let remembered=null;
- editable.addEventListener('mouseup',()=>remembered=rememberTextSelection(editable));
- editable.addEventListener('keyup',()=>remembered=rememberTextSelection(editable));
- // Preserve the range on mouse interaction with toolbar controls.
- bar.addEventListener('mousedown',e=>{if(e.target.closest('button'))e.preventDefault();remembered=remembered||rememberTextSelection(editable)});
+ const capture=()=>{const r=rememberTextSelection(editable);if(r)remembered=r};
  const styleLabel=document.createElement('label');styleLabel.className='cl-style-picker';styleLabel.append('Text type ');
- const type=document.createElement('select');type.setAttribute('aria-label','Text type for selected paragraph');
+ const type=document.createElement('select');type.setAttribute('aria-label','Text type for current paragraph');
  [['','Choose text type'],['H1','Heading 1'],['H2','Heading 2'],['P','Paragraph']].forEach(([value,label])=>{const option=document.createElement('option');option.value=value;option.textContent=label;type.append(option)});
- type.onchange=()=>{if(styleSelectedParagraph(editable,type.value,remembered)){save();remembered=null;type.value=''}else{type.value='';options.onNoSelection?.()}};
  styleLabel.append(type);bar.append(styleLabel);
- const bold=document.createElement('button');bold.type='button';bold.className='secondary';bold.textContent='B';bold.title='Bold selected text';bold.setAttribute('aria-label','Bold selected text');bold.style.fontWeight='700';
- bold.onclick=()=>{if(wrapSelectedText(editable,'strong',null,null,remembered)){save();remembered=null}else options.onNoSelection?.()};bar.append(bold);
+ const bold=document.createElement('button');bold.type='button';bold.className='secondary';bold.textContent='B';bold.title='Bold highlighted text';bold.setAttribute('aria-label','Bold highlighted text');bold.style.fontWeight='700';bar.append(bold);
  const sizeLabel=document.createElement('label');sizeLabel.className='cl-style-picker';sizeLabel.append('Size ');
  const size=document.createElement('select');size.setAttribute('aria-label','Font size for highlighted text');
  [['','Choose size'],...([12,14,16,18,20,24,28,32,36,48].map(n=>[String(n),n+' px']))].forEach(([value,label])=>{const option=document.createElement('option');option.value=value;option.textContent=label;size.append(option)});
- size.onchange=()=>{if(wrapSelectedText(editable,'span','fontSize',size.value+'px',remembered)){save();remembered=null;size.value=''}else{size.value='';options.onNoSelection?.()}};
  sizeLabel.append(size);bar.append(sizeLabel);
+ // The controls show the style at the selection/caret, rather than resetting to placeholders.
+ function updateToolbar(){
+  const sel=window.getSelection();const range=sel?.rangeCount?sel.getRangeAt(0):null;
+  if(!range||!editable.contains(range.startContainer))return;
+  let node=range.startContainer.nodeType===1?range.startContainer:range.startContainer.parentElement;
+  if(!node)return;
+  const block=node.closest('h1,h2,p,li');
+  type.value=block&&editable.contains(block)&&['H1','H2','P'].includes(block.tagName)?block.tagName:(block?.tagName==='LI'?'P':'');
+  const strong=node.closest('strong,b');const isBold=!!strong&&editable.contains(strong);
+  bold.classList.toggle('is-active',isBold);bold.setAttribute('aria-pressed',String(isBold));
+  const span=node.closest('span[style*="font-size"]');
+  const pixels=span&&editable.contains(span)?parseInt(span.style.fontSize,10):NaN;
+  size.value=Number.isFinite(pixels)&&[...size.options].some(opt=>Number(opt.value)===pixels)?String(pixels):'';
+ }
+ function track(){capture();updateToolbar()}
+ editable.addEventListener('mouseup',track);editable.addEventListener('keyup',track);editable.addEventListener('focus',track);editable.addEventListener('input',track);
+ // Keep a selection cached while the select/button receives focus.
+ bar.addEventListener('pointerdown',capture,true);bar.addEventListener('keydown',capture,true);
+ const apply=(operation)=>{capture();const r=remembered;const worked=operation(r);if(worked){save();remembered=rememberTextSelection(editable)}else options.onNoSelection?.();return worked};
+ type.onchange=()=>{const requested=type.value;if(!apply(r=>styleSelectedParagraph(editable,requested,r)))updateToolbar();else type.value=requested};
+ bold.onclick=()=>{if(apply(r=>wrapSelectedText(editable,'strong',null,null,r))){bold.classList.add('is-active');bold.setAttribute('aria-pressed','true')}};
+ size.onchange=()=>{const requested=size.value;if(!apply(r=>wrapSelectedText(editable,'span','fontSize',requested+'px',r)))updateToolbar();else size.value=requested};
  return bar;
 }
 let savedRichRange=null;
@@ -172,9 +209,9 @@ function renderImportedRiseEditor(canvas){
  const richField=(parent,label,obj,key)=>{
   const wrapper=el('div','rise-edit-field'),name=el('span','',label),edit=el('div','rise-edit-rich');
   edit.contentEditable='true';edit.setAttribute('role','textbox');edit.setAttribute('aria-label',label);edit.innerHTML=obj[key]||'';
-  edit.oninput=()=>{obj[key]=edit.innerHTML;persist()};edit.onblur=()=>{obj[key]=edit.innerHTML;persist()};
-  const styleTools=makeTextStyleToolbar(edit,()=>{obj[key]=edit.innerHTML;persist()},{onNoSelection:()=>{$('#status').textContent='Select text in the editor first.'}});
-  wrapper.append(name,styleTools,edit);parent.append(wrapper);
+  edit.oninput=()=>{obj[key]=edit.innerHTML;persist()};edit.onblur=()=>{const fixed=removeEmptyRiseBullets(edit.innerHTML);if(fixed!==edit.innerHTML)edit.innerHTML=fixed;obj[key]=fixed;persist()};
+  const styleTools=makeTextStyleToolbar(edit,()=>{const fixed=removeEmptyRiseBullets(edit.innerHTML);if(fixed!==edit.innerHTML)edit.innerHTML=fixed;obj[key]=fixed;persist()},{onNoSelection:()=>{$('#status').textContent='Select text in the editor first.'}});
+  const cleanButton=el('button','secondary','Remove empty bullets');cleanButton.type='button';cleanButton.onclick=()=>{edit.innerHTML=removeEmptyRiseBullets(edit.innerHTML);obj[key]=edit.innerHTML;persist()};wrapper.append(name,styleTools,edit,cleanButton);parent.append(wrapper);
  };
  const action=(parent,label,handler)=>{const button=el('button','secondary',label);button.type='button';button.onclick=handler;parent.append(button);return button};
  const rerender=()=>{persist();render()};
@@ -382,7 +419,9 @@ function renderDesignPanel(){let panel=document.querySelector('#design-panel');i
 function renderQuickToolbar(){const current=document.querySelector(`[data-appearance-block="${selected}"] .quick-text-toolbar`);if(current)return;document.querySelectorAll('.quick-text-toolbar').forEach(x=>x.remove());if(!selected)return;const block=lesson.sections.flatMap(s=>s.blocks).find(b=>b.id===selected);if(!block||block.type!=='text')return;const el=document.querySelector(`[data-appearance-block="${selected}"]`);if(!el)return;const a=block.appearance??={};const bar=document.createElement('div');bar.className='quick-text-toolbar';bar.addEventListener('mousedown',e=>{e.stopPropagation();if(e.target.closest('button'))e.preventDefault()});bar.addEventListener('click',e=>e.stopPropagation());bar.addEventListener('pointerdown',e=>e.stopPropagation());bar.setAttribute('role','toolbar');bar.setAttribute('aria-label','Quick text formatting');const add=(label,title,cb,active=false)=>{const b=document.createElement('button');b.type='button';b.className='secondary quick-control'+(active?' is-active':'');b.textContent=label;b.title=title;b.setAttribute('aria-label',title);b.onclick=e=>{e.stopPropagation();cb();persist();renderCanvasAppearance();renderDesignPanel();renderQuickToolbar()};bar.append(b)};
 const type=document.createElement('select');type.setAttribute('aria-label','Text type for selected paragraph');type.title='Semantic text style';
 for(const [v,label] of [['','Text type'],['H1','Heading 1'],['H2','Heading 2'],['P','Paragraph']]){const o=new Option(label,v);type.append(o)}
-type.onchange=()=>{const editable=el.querySelector('.editable-text');if(styleSelectedParagraph(editable,type.value,savedRichRange)){saveRichText(block,editable);savedRichRange=null}else $('#status').textContent='Click within a paragraph before choosing a text type.';type.value=''};bar.append(type);
+const syncNativeTextType=()=>{const editable=el.querySelector('.editable-text');const sel=window.getSelection();if(!editable||!sel?.rangeCount||!editable.contains(sel.anchorNode))return;let node=sel.anchorNode.nodeType===1?sel.anchorNode:sel.anchorNode.parentElement;const p=node?.closest('h1,h2,p');type.value=p&&editable.contains(p)?p.tagName:''};
+ const nativeEditable=el.querySelector('.editable-text');nativeEditable?.addEventListener('keyup',syncNativeTextType);nativeEditable?.addEventListener('mouseup',syncNativeTextType);
+ type.onchange=()=>{const editable=el.querySelector('.editable-text');if(styleSelectedParagraph(editable,type.value,savedRichRange)){saveRichText(block,editable);savedRichRange=rememberTextSelection(editable)}else $('#status').textContent='Click within a paragraph before choosing a text type.';type.value=type.value};bar.append(type);
 add('B','Bold',()=>{if(!richFormat(block,'bold'))a.bold=!a.bold},!!a.bold);add('I','Italic',()=>{if(!richFormat(block,'italic'))a.italic=!a.italic},!!a.italic);
 const size=document.createElement('select');size.title='Font size';size.setAttribute('aria-label','Font size');for(const n of [12,14,16,18,20,24,28,32,36,48]){const o=document.createElement('option');o.value=n;o.textContent=n+'px';size.append(o)}if(![12,14,16,18,20,24,28,32,36,48].includes(Number(a.fontSize||16))){const o=document.createElement('option');o.value=a.fontSize;o.textContent=a.fontSize+'px';size.append(o)}size.value=a.fontSize||16;size.onchange=e=>{e.stopPropagation();if(!richFormat(block,'size',size.value))a.fontSize=Number(size.value);persist();renderCanvasAppearance();renderDesignPanel()};bar.append(size);
 const color=document.createElement('select');color.title='Text color';color.setAttribute('aria-label','Text color');for(const k of BRAND_COLOR_KEYS){const o=document.createElement('option');o.value=k;o.textContent=k==='text'?'Text':k==='background'?'Background':`Accent ${k.slice(-1)}`;color.append(o)}const custom=document.createElement('option');custom.value='custom';custom.textContent='Custom…';color.append(custom);color.value=a.textChoice?.mode==='custom'?'custom':a.textChoice?.key||'text';color.onchange=()=>{if(color.value==='custom'){const picker=document.createElement('input');picker.type='color';picker.value=a.textChoice?.hex||'#243447';picker.oninput=()=>{if(!richFormat(block,'color',picker.value))a.textChoice={mode:'custom',hex:picker.value};persist();renderCanvasAppearance();renderDesignPanel()};bar.append(picker);picker.click()}else{if(!richFormat(block,'color',getBrand()[color.value]||'#243447'))a.textChoice={mode:'brand',key:color.value};persist();renderCanvasAppearance();renderDesignPanel()}};bar.append(color);
