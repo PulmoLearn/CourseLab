@@ -125,3 +125,7 @@
 
 /* Editable Rise course content panels */
 .rise-editor-shell{display:grid;gap:1rem}.rise-edit-block{display:grid;gap:.85rem}.rise-edit-block .toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:.45rem}.rise-edit-block .toolbar strong{margin-right:auto}.rise-edit-subitem{padding:.85rem;border:1px solid #d8e3e8;border-radius:10px;display:grid;gap:.6rem}.rise-edit-field{display:grid;gap:.4rem;margin:.35rem 0}.rise-edit-field>span{font-weight:600;font-size:.9rem}.rise-edit-field textarea,.rise-edit-field input,.rise-edit-field select{box-sizing:border-box;width:100%;max-width:100%}.rise-edit-rich{background:#fff;min-height:3rem;padding:.75rem;border:1px solid #9aadc0;border-radius:7px;line-height:1.5;overflow-wrap:anywhere}.rise-edit-rich:focus{outline:2px solid #087f78;outline-offset:2px}.rise-edit-rich p{margin:.35rem 0}.rise-edit-rich ul,.rise-edit-rich ol{padding-left:1.5rem}.rise-edit-check{display:flex;align-items:center;gap:.5rem}.rise-edit-answer{padding:.7rem;border:1px dashed #c5d3de;border-radius:8px;margin:.4rem 0}.rise-edit-answer .rise-edit-field{flex:1}.rise-edit-shell button{white-space:normal}
+
+/* Visible selection for imported blocks using the shared Properties / Design controls. */
+.rise-edit-block.selected{outline:3px solid #087f78;outline-offset:2px}
+.rise-edit-block:focus-visible{outline:3px solid #087f78;outline-offset:2px}
