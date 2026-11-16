@@ -21,6 +21,7 @@
   else{const {data,enrollError,error}=await db.rpc('my_enrolled_courses');if(error||enrollError)throw error||enrollError;const c=data?.find(x=>x.course_id===id);if(!c)throw Error('You are not enrolled in this course.');versionId=c.version_id;}
   if(!versionId)throw Error('This course is not published.');
   const {data:v,error:ve}=await db.from('course_versions').select('id,version_number,snapshot').eq('id',versionId).single();if(ve)throw ve;version=v;course=v.snapshot.course;lessons=[...(v.snapshot.lessons||[])].sort((a,b)=>a.position-b.position);
+  if(course.settings?.scorm12?.launchUrl){status('Loading SCORM course…');await window.CourseLabScorm.open({db,user,courseId:id,versionId:v.id,course,lessonArea:$('lesson-area'),status});return;}
   $('course-name').textContent=course.title;$('version-label').textContent=`Published version ${v.version_number}${test?' · TEST STUDENT — excluded from official reporting':''}`;
   const {data:progress,error:pe}=await db.from(progressTable).select('lesson_id').eq('course_id',id).eq('version_id',v.id).eq(test?'instructor_id':'learner_id',user.id);if(pe)throw pe;
   completed=new Set((progress||[]).map(x=>x.lesson_id));if(!lessons.length){status('This published course has no lessons.');return}status('');
