@@ -96,8 +96,35 @@
       appendText(box,'p',i===3?'Multi-select: percentages may sum to more than 100%.':'Only answer options present in reported selections or correct-answer patterns can be shown; unreported distractors may be absent.');el.append(box);
     }
   }
-  function participants(){const el=$('participants');el.replaceChildren();if(!cohort.length){appendText(el,'p','No learner records yet.');return;}
-    const rows=cohort.map(r=>{const s=countScore(r);const a=r.groups.pre.map(x=>numeric(x.student_response)),b=r.groups.post.map(x=>numeric(x.student_response)),pairs=a.map((v,i)=>[v,b[i]]).filter(x=>x[0]!=null&&x[1]!=null),delta=pairs.length?fmt(mean(pairs.map(x=>x[1]-x[0]))):'—';return [r.code,r.status,r.groups.pre.filter(hasResponse).length+'/7',r.groups.post.filter(hasResponse).length+'/7',delta,s.answered?`${s.correct}/${s.total}`:'—',r.updated];});el.append(t(['Participant','Completion','Pre','Post','Confidence change','Assessment','Last saved'],rows));
+  function participants(){
+    const el=$('participants');el.replaceChildren();
+    if(!cohort.length){appendText(el,'p','No learner records yet.');return;}
+    appendText(el,'p','Pre/post values are mean confidence ratings on a 1–5 scale. Change compares only questions answered at both time points. Expand a participant to view each recorded answer.');
+    const rows=[];
+    for(const r of cohort){
+      const s=countScore(r);
+      const pre=labels.map((_,i)=>numeric(r.groups.pre[i]?.student_response));
+      const post=labels.map((_,i)=>numeric(r.groups.post[i]?.student_response));
+      const valid=v=>v!==null&&v>=1&&v<=5;
+      const preValid=pre.filter(valid),postValid=post.filter(valid);
+      const paired=pre.map((v,i)=>[v,post[i]]).filter(([a,b])=>valid(a)&&valid(b));
+      const preMean=mean(preValid),postMean=mean(postValid);
+      const delta=paired.length?mean(paired.map(([a,b])=>b-a)):null;
+      rows.push([r.code,fmt(preMean),fmt(postMean),delta===null?'—':(delta>0?'+':'')+fmt(delta),s.answered?`${s.correct}/${s.total} (${pct(s.correct,s.total)})`:'—',r.status]);
+      const details=tag('details');details.className='scorm-participant-details';
+      const summary=tag('summary',`View ${r.code} — individual confidence answers`);details.append(summary);
+      appendText(details,'p',`Questions answered: pre ${preValid.length}/7 · post ${postValid.length}/7 · paired ${paired.length}/7. Missing answers are excluded from averages.`);
+      const answerRows=labels.map((name,i)=>{
+        const a=valid(pre[i])?pre[i]:null,b=valid(post[i])?post[i]:null;
+        const change=a!==null&&b!==null?b-a:null;
+        return [name,a===null?'Not answered':`${a}/5`,b===null?'Not answered':`${b}/5`,change===null?'—':`${change>0?'+':''}${change}`];
+      });
+      details.append(t(['Confidence question','Before','After','Change'],answerRows));
+      appendText(details,'p',`Last saved: ${r.updated}`);
+      el.append(details);
+    }
+    const list=t(['Participant','Pre mean /5','Post mean /5','Change','Assessment','Completion'],rows);
+    el.insertBefore(list,el.querySelector('details'));
   }
   function reflection(){const el=$('reflections');el.replaceChildren();const samples=cohort.flatMap(r=>r.groups.reflection.filter(hasResponse).map(x=>({code:r.code,answer:String(x.student_response)})));if(!samples.length){appendText(el,'p','No written reflections recorded yet.');return;}
     for(const s of samples){const item=div('scorm-response-card');appendText(item,'h4',s.code);appendText(item,'p',s.answer);el.append(item);}appendText(el,'p','Free-text answers may contain identifying details. Review and redact before sharing research exports.');
